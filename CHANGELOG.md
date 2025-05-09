@@ -2,6 +2,8 @@
 
 - [x] Automatically insert bullets with <CR>
 - [x] Handle insertion with "o"
-- [ ] Handle multiple bullet types (-, \*, +)
-- [ ] Handle checkbox bullets
+- [x] Handle insertion from middle of line
+- [ ] Handle end list if list item empty
 - [ ] Handle numbered bullets
+- [ ] Handle checkbox bullets
+- [ ] Handle multiple bullet types (-, \*, +)
