@@ -5,5 +5,5 @@
 - [x] Handle insertion from middle of line
 - [x] Handle end list if list item empty
 - [x] Handle numbered bullets
-- [ ] Handle checkbox bullets
+- [x] Handle checkbox bullets
 - [ ] Handle multiple bullet types (-, \*, +)

@@ -5,7 +5,6 @@
 --- @field marker string The list marker
 --- @field indent_spaces integer The indentation level of the line in number of spaces
 --- @field content string The text content of the list item
---- @field preamble_length integer The number of characters up to start of content
 
 local Module = {}
 local utils = {}
@@ -30,18 +29,15 @@ vim.api.nvim_create_autocmd("FileType", {
 				return
 			end
 
-			if list_item.content == "" then
+			if list_item.content == "" and text_after_cursor == "" then
 				vim.api.nvim_buf_set_lines(0, cursor_row_1_based - 1, cursor_row_1_based, true, { "" })
 				return
 			end
 
-			local next_line_text = string.rep(" ", list_item.indent_spaces)
-				.. list_item.marker
-				.. " "
-				.. text_after_cursor
+			local next_line = utils.generate_next_list_item(list_item, text_after_cursor)
 
 			vim.api.nvim_buf_set_lines(0, cursor_row_1_based - 1, cursor_row_1_based, true, { text_up_to_cursor })
-			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { next_line_text })
+			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_line) })
 
 			if list_item.is_ordered then
 				utils.reindex_ordered_block_around(cursor_row_1_based)
@@ -49,7 +45,7 @@ vim.api.nvim_create_autocmd("FileType", {
 
 			list_item = utils.parse_line(cursor_row_1_based + 1)
 			assert(list_item ~= nil, "Newly generated line after <CR> does not look like a list item")
-			vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, list_item.preamble_length })
+			vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, utils.get_preamble_length(next_line) })
 		end, { buffer = true })
 		vim.keymap.set("n", "o", function()
 			local cursor_row_1_based, _ = table.unpack(vim.api.nvim_win_get_cursor(0))
@@ -62,9 +58,9 @@ vim.api.nvim_create_autocmd("FileType", {
 				return
 			end
 
-			local next_line_text = string.rep(" ", list_item.indent_spaces) .. list_item.marker .. " "
+			local next_line = utils.generate_next_list_item(list_item, "")
 
-			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { next_line_text })
+			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_line) })
 
 			if list_item.is_ordered then
 				utils.reindex_ordered_block_around(cursor_row_1_based)
@@ -102,8 +98,8 @@ end
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain ordered list item
 utils.parse_ordered_list_item_text = function(line_text)
-	local pattern = "^(%s*)(%d+%.)(%s+)(.*)"
-	local indent, marker, buffer, content = string.match(line_text, pattern)
+	local pattern = "^(%s*)(%d+%.)%s+(.*)"
+	local indent, marker, content = string.match(line_text, pattern)
 
 	if indent == nil then
 		return nil
@@ -118,15 +114,14 @@ utils.parse_ordered_list_item_text = function(line_text)
 		marker = marker,
 		indent_spaces = string.len(indent),
 		content = content,
-		preamble_length = string.len(indent) + string.len(marker) + string.len(buffer),
 	}
 end
 
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain unordered list item
 utils.parse_unordered_list_item_text = function(line_text)
-	local pattern = "^(%s*)(%-)(%s+)(.*)"
-	local indent, marker, buffer, content = string.match(line_text, pattern)
+	local pattern = "^(%s*)(%-)%s+(.*)"
+	local indent, marker, content = string.match(line_text, pattern)
 
 	if indent == nil then
 		return nil
@@ -141,7 +136,6 @@ utils.parse_unordered_list_item_text = function(line_text)
 		marker = marker,
 		indent_spaces = string.len(indent),
 		content = content,
-		preamble_length = string.len(indent) + string.len(marker) + string.len(buffer),
 	}
 end
 
@@ -226,7 +220,7 @@ utils.reindex_ordered_list_item = function(line_num, index)
 	)
 
 	list_item.marker = string.format("%d.", index)
-	local new_line_text = utils.generate_text(list_item)
+	local new_line_text = utils.to_string(list_item)
 	vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, true, { new_line_text })
 end
 
@@ -236,10 +230,57 @@ utils.read_buffer_line = function(line_num)
 	return vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
 end
 
----@param info ListItem
+---@param list_item ListItem
 ---@return string # String generated from LineInfo input
-utils.generate_text = function(info)
-	return string.rep(" ", info.indent_spaces) .. info.marker .. " " .. info.content
+utils.to_string = function(list_item)
+	local buffer
+	if list_item.is_task then
+		if list_item.is_completed then
+			buffer = " [x] "
+		else
+			buffer = " [ ] "
+		end
+	else
+		buffer = " "
+	end
+	return string.rep(" ", list_item.indent_spaces) .. list_item.marker .. buffer .. list_item.content
+end
+
+---Compute the appropriate list item to put below the one that is input
+---@param original ListItem
+---@param initial_content string
+---@return ListItem
+utils.generate_next_list_item = function(original, initial_content)
+	local marker
+	if original.is_ordered then
+		marker = "1."
+	else
+		marker = "-"
+	end
+	return {
+		is_ordered = original.is_ordered,
+		is_task = original.is_task,
+		is_completed = false,
+		marker = marker,
+		indent_spaces = original.indent_spaces,
+		content = initial_content,
+	}
+end
+
+---@param list_item ListItem
+---@return integer # Number of characters until start of contents
+utils.get_preamble_length = function(list_item)
+	local buffer
+	if list_item.is_task then
+		if list_item.is_completed then
+			buffer = " [x] "
+		else
+			buffer = " [ ] "
+		end
+	else
+		buffer = " "
+	end
+	return list_item.indent_spaces + string.len(list_item.marker) + string.len(buffer)
 end
 
 return Module
