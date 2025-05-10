@@ -21,48 +21,48 @@ vim.api.nvim_create_autocmd("FileType", {
 			local line_text = utils.read_buffer_line(cursor_row_1_based)
 			local text_up_to_cursor = string.sub(line_text, 1, cursor_col_0_based)
 			local text_after_cursor = string.sub(line_text, cursor_col_0_based + 1)
-			local list_item = utils.parse_line_text(text_up_to_cursor)
+			local current_li = utils.list_item_from_string(text_up_to_cursor)
 
-			if list_item == nil then
+			if current_li == nil then
 				local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
 				vim.api.nvim_feedkeys(newline, "n", false)
 				return
 			end
 
-			if list_item.content == "" and text_after_cursor == "" then
+			if current_li.content == "" and text_after_cursor == "" then
 				vim.api.nvim_buf_set_lines(0, cursor_row_1_based - 1, cursor_row_1_based, true, { "" })
 				return
 			end
 
-			local next_line = utils.generate_next_list_item(list_item, text_after_cursor)
+			local next_li = utils.generate_next_list_item(current_li, text_after_cursor)
 
 			vim.api.nvim_buf_set_lines(0, cursor_row_1_based - 1, cursor_row_1_based, true, { text_up_to_cursor })
-			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_line) })
+			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_li) })
 
-			if list_item.is_ordered then
+			if current_li.is_ordered then
 				utils.reindex_ordered_block_around(cursor_row_1_based)
 			end
 
-			list_item = utils.parse_line(cursor_row_1_based + 1)
-			assert(list_item ~= nil, "Newly generated line after <CR> does not look like a list item")
-			vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, utils.get_preamble_length(next_line) })
+			local next_li = utils.list_item_from_line(cursor_row_1_based + 1)
+			assert(next_li ~= nil, "Newly generated line after <CR> does not look like a list item")
+			vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, utils.get_preamble_length(next_li) })
 		end, { buffer = true })
 		vim.keymap.set("n", "o", function()
 			local cursor_row_1_based, _ = table.unpack(vim.api.nvim_win_get_cursor(0))
-			local list_item = utils.parse_line(cursor_row_1_based)
+			local current_li = utils.list_item_from_line(cursor_row_1_based)
 
-			if list_item == nil or list_item.content == "" then
+			if current_li == nil or current_li.content == "" then
 				vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { "" })
 				vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, 0 })
 				vim.cmd("startinsert!")
 				return
 			end
 
-			local next_line = utils.generate_next_list_item(list_item, "")
+			local next_li = utils.generate_next_list_item(current_li, "")
 
-			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_line) })
+			vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { utils.to_string(next_li) })
 
-			if list_item.is_ordered then
+			if current_li.is_ordered then
 				utils.reindex_ordered_block_around(cursor_row_1_based)
 			end
 
@@ -74,14 +74,14 @@ vim.api.nvim_create_autocmd("FileType", {
 
 ---@param line_num integer 1-indexed line number to parse
 ---@return ListItem|nil # Nil if line does not contain list item
-utils.parse_line = function(line_num)
+utils.list_item_from_line = function(line_num)
 	local line_text = utils.read_buffer_line(line_num)
-	return utils.parse_line_text(line_text)
+	return utils.list_item_from_string(line_text)
 end
 
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain list item
-utils.parse_line_text = function(line_text)
+utils.list_item_from_string = function(line_text)
 	local list_item = utils.parse_ordered_list_item_text(line_text)
 	if list_item ~= nil then
 		return list_item
@@ -105,7 +105,10 @@ utils.parse_ordered_list_item_text = function(line_text)
 		return nil
 	end
 
-	local is_task, is_completed = utils.parse_task_marker_text(line_text)
+	local is_task, is_completed, corrected_content = utils.parse_task_marker_text(line_text)
+	if is_task then
+		content = corrected_content
+	end
 
 	return {
 		is_ordered = true,
@@ -127,7 +130,10 @@ utils.parse_unordered_list_item_text = function(line_text)
 		return nil
 	end
 
-	local is_task, is_completed = utils.parse_task_marker_text(line_text)
+	local is_task, is_completed, corrected_content = utils.parse_task_marker_text(line_text)
+	if is_task then
+		content = corrected_content
+	end
 
 	return {
 		is_ordered = false,
@@ -142,17 +148,18 @@ end
 ---@param line_text string Text of line to parse
 ---@return boolean # True if line is task item
 ---@return boolean # True if marked as completed
+---@return string # Detected content correcting for task marker
 utils.parse_task_marker_text = function(line_text)
-	local pattern = "^%s*%-?%d*%.?(%s%s?%s?%s?%[([%sxX])%])%s+.*"
-	local task, completion = string.match(line_text, pattern)
+	local pattern = "^%s*%-?%d*%.?(%s%s?%s?%s?%[([%sxX])%])%s+(.*)"
+	local task, completion, content = string.match(line_text, pattern)
 
 	if task == nil then
-		return false, false
+		return false, false, ""
 	end
 
 	local is_completed = completion == "x" or completion == "X"
 
-	return true, is_completed
+	return true, is_completed, content
 end
 
 ---Only call this function once you are sure that line_num contains an ordered list item.
