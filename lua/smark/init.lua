@@ -3,7 +3,7 @@
 --- @field lower integer 1-indexed lower bound line number
 
 local list_item = require("smark.list_item")
-local indent_stack = require("smark.indent_stack")
+local indent_rule = require("smark.indent_rule")
 local utils = require("smark.utils")
 
 local smark = {}
@@ -34,8 +34,6 @@ vim.api.nvim_create_autocmd("FileType", {
 				return
 			end
 
-			local bounds = private.get_containing_list_block_bounds(cursor_row_1_based)
-
 			local next_li = list_item.get_next(current_li, text_after_cursor)
 
 			vim.api.nvim_buf_set_lines(0, cursor_row_1_based - 1, cursor_row_1_based, true, { text_up_to_cursor })
@@ -50,6 +48,15 @@ vim.api.nvim_create_autocmd("FileType", {
 			if current_li.is_ordered then
 				private.reindex_ordered_block_around(cursor_row_1_based)
 			end
+
+			local bounds, li_array = private.get_containing_list_block_bounds(cursor_row_1_based)
+			assert(bounds ~= nil)
+			private.standardize_list_block(li_array)
+			local lis_as_strings = {}
+			for i, li in ipairs(li_array) do
+				lis_as_strings[i] = list_item.to_string(li)
+			end
+			vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
 
 			local next_li = list_item.from_line(cursor_row_1_based + 1)
 			assert(next_li ~= nil, "Newly generated line after <CR> does not look like a list item")
@@ -147,36 +154,12 @@ end
 ---Standardize a list block, comprised of consecutive list items (in-place)
 ---@param li_array ListItem[]
 private.standardize_list_block = function(li_array)
-	local bias = nil
-	local currently_ordered = nil
-	local current_index = 1
-	local istack = indent_stack.new(true)
+	local bias = li_array[1].indent_spaces
+	local irule = indent_rule.new(li_array[1].is_ordered)
 
 	for _, li in ipairs(li_array) do
-		if bias == nil then
-			bias = li.indent_spaces
-			if li.is_ordered then
-				currently_ordered = true
-			else
-				currently_ordered = false
-			end
-		end
-
-		if not (currently_ordered == li.is_ordered) then
-			currently_ordered = li.is_ordered
-			current_index = 1
-		end
-
-		li.index = current_index
-		current_index = current_index + 1
-
-		local corrected_ispaces = li.indent_spaces - bias
-		local standardized_ispaces = indent_stack.snap_to_ruler(istack, corrected_ispaces)
-		if standardized_ispaces == nil then
-			local preamble_len = private.get_preamble_length(li)
-		end
-
-		table.insert(standardized_li_array, li)
+		li.indent_spaces = li.indent_spaces - bias
+		indent_rule.snap(irule, li)
 	end
 end
 

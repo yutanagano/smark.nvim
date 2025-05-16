@@ -6,7 +6,7 @@
 - [x] Handle end list if list item empty
 - [x] Handle numbered bullets
 - [x] Handle checkbox bullets
-- [ ] Handle block auto-formatting
+- [x] Handle block auto-formatting
 - [ ] Handle indentation:
   - [ ] Automatically increase indentation on ending bullet with colon
   - [ ] Override <C-t> and <C-r> behaviours

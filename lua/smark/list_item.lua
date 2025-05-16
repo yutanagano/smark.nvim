@@ -118,6 +118,16 @@ list_item.get_preamble_length = function(li)
 end
 
 ---@param li ListItem
+---@return integer # The number of spaces required to be registered as nested list item of one given
+list_item.get_nested_indent_spaces = function(li)
+	if li.is_ordered then
+		return li.indent_spaces + string.len(tostring(li.index)) + 2
+	else
+		return li.indent_spaces + 2
+	end
+end
+
+---@param li ListItem
 ---@return string # String generated from LineInfo input
 list_item.to_string = function(li)
 	local marker, buffer

@@ -16,8 +16,16 @@ function indent_rule.new(first_item_ordered)
 	end
 
 	return {
-		[1] = 0,
-		[2] = next_indent_spaces,
+		[1] = {
+			indent_spaces = 0,
+			is_ordered = first_item_ordered,
+			index = 1,
+		},
+		[2] = {
+			indent_spaces = next_indent_spaces,
+			is_ordered = false,
+			index = 1,
+		},
 		depth = 2,
 	}
 end
@@ -28,10 +36,23 @@ end
 ---@param li ListItem
 function indent_rule.snap(irule, li)
 	for i = irule.depth, 1, -1 do
-		if li.indent_spaces > irule[i] then
+		if li.indent_spaces >= irule[i].indent_spaces then
+			li.indent_spaces = irule[i].indent_spaces
+
+			if irule[i].is_ordered ~= li.is_ordered then
+				irule[i].index = 1
+				irule[i].is_ordered = li.is_ordered
+			end
+
+			li.index = irule[i].index
+			irule[i].index = irule[i].index + 1
+
 			irule.depth = i + 1
-			irule[i + 1] = irule[i] + list_item.get_preamble_length(li)
-			li.indent_spaces = irule[i]
+			irule[i + 1] = {
+				indent_spaces = list_item.get_nested_indent_spaces(li),
+				is_ordered = false,
+				index = 1,
+			}
 			return
 		end
 	end
