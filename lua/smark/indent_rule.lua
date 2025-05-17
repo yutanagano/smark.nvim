@@ -1,63 +1,61 @@
----@class IndentRule
----@field depth integer Number of indentation levels currently on stack
+---@class CursorCoords
+---@field row1 integer 1-indexed row number of cursor
+---@field col0 integer 0-indexed column number of cursor
+
+---@alias indent_spec integer[] Integer array describing the number of indent spaces required to align to each level, up to current
 
 local list_item = require("smark.list_item")
 
 local indent_rule = {}
 
----@param first_item_ordered boolean True if first list item is ordered
----@return IndentRule
-function indent_rule.new(first_item_ordered)
-	local next_indent_spaces
-	if first_item_ordered then
-		next_indent_spaces = 2
-	else
-		next_indent_spaces = 3
-	end
+---Mutate array of list items in place to enforce correct indentation.
+---Optionally mutate relative cursor coordinates in place if supplied.
+---Return a corresponding array of indent specs that describe the resulting correct indentation information.
+---@param li_array ListItem[]
+---@param rel_cursor_coords? CursorCoords Cursor coordinates relative to li_array
+---@return indent_spec[]
+function indent_rule.fix(li_array, rel_cursor_coords)
+	local ispec_array = {}
 
-	return {
-		[1] = {
-			indent_spaces = 0,
-			is_ordered = first_item_ordered,
-			index = 1,
-		},
-		[2] = {
-			indent_spaces = next_indent_spaces,
-			is_ordered = false,
-			index = 1,
-		},
-		depth = 2,
-	}
-end
+	for i, li in ipairs(li_array) do
+		if i == 1 then
+			ispec_array[1] = { li.indent_spaces }
+		else
+			local ispec = {}
+			local ispaces_set = false
+			local prev_ispec = ispec_array[i - 1]
+			local prev_ilevel = #prev_ispec
+			local prev_nested_ispaces = list_item.get_nested_indent_spaces(li_array[i - 1])
 
----Snap a list item's indentation against an indent rule to figure out the correct number of indent spaces.
----Update both the indent rule and list item in place as necessary.
----@param irule IndentRule
----@param li ListItem
-function indent_rule.snap(irule, li)
-	for i = irule.depth, 1, -1 do
-		if li.indent_spaces >= irule[i].indent_spaces then
-			li.indent_spaces = irule[i].indent_spaces
-
-			if irule[i].is_ordered ~= li.is_ordered then
-				irule[i].index = 1
-				irule[i].is_ordered = li.is_ordered
+			if li.indent_spaces >= prev_nested_ispaces then
+				if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
+					rel_cursor_coords.col0 =
+						math.max(0, rel_cursor_coords.col0 + prev_nested_ispaces - li.indent_spaces)
+				end
+				li.indent_spaces = prev_nested_ispaces
+				ispec[prev_ilevel + 1] = prev_nested_ispaces
+				ispaces_set = true
 			end
 
-			li.index = irule[i].index
-			irule[i].index = irule[i].index + 1
+			for ilevel = prev_ilevel, 1, -1 do
+				local ispaces = prev_ispec[ilevel]
+				if li.indent_spaces >= ispaces then
+					if not ispaces_set then
+						if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
+							rel_cursor_coords.col0 = math.max(0, rel_cursor_coords.col0 + ispaces - li.indent_spaces)
+						end
+						li.indent_spaces = ispaces
+						ispaces_set = true
+					end
+					ispec[ilevel] = ispaces
+				end
+			end
 
-			irule.depth = i + 1
-			irule[i + 1] = {
-				indent_spaces = list_item.get_nested_indent_spaces(li),
-				is_ordered = false,
-				index = 1,
-			}
-			return
+			ispec_array[i] = ispec
 		end
 	end
 
-	error("This line should never be executed as all cases should have been caught earlier!")
+	return ispec_array
 end
 
 return indent_rule

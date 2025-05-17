@@ -4,9 +4,9 @@
 - [x] Handle insertion with "o"
 - [x] Handle insertion from middle of line
 - [x] Handle end list if list item empty
-- [x] Handle numbered bullets
+- [ ] Handle numbered bullets
 - [x] Handle checkbox bullets
-- [x] Handle block auto-formatting
+- [ ] Handle block auto-formatting
 - [ ] Handle indentation:
   - [ ] Automatically increase indentation on ending bullet with colon
   - [ ] Override <C-t> and <C-r> behaviours
