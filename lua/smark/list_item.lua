@@ -54,6 +54,7 @@ function list_item.parse_ordered_list_item_text(line_text)
 		is_ordered = true,
 		is_task = is_task,
 		is_completed = is_completed,
+		index = 1,
 		indent_spaces = string.len(indent),
 		content = content,
 		original_preamble_length = preamble_length,
@@ -82,6 +83,7 @@ function list_item.parse_unordered_list_item_text(line_text)
 		is_ordered = false,
 		is_task = is_task,
 		is_completed = is_completed,
+		index = 1,
 		indent_spaces = string.len(indent),
 		content = content,
 		original_preamble_length = preamble_length,
@@ -122,10 +124,6 @@ function list_item.get_preamble_length(li)
 		buffer_len = 5
 	else
 		buffer_len = 1
-	end
-
-	for k, v in pairs(li) do
-		print(k, v)
 	end
 
 	return li.indent_spaces + marker_len + buffer_len
@@ -176,6 +174,7 @@ function list_item.get_empty_like(li)
 		is_ordered = li.is_ordered,
 		is_task = li.is_task,
 		is_completed = false,
+		index = 1,
 		indent_spaces = li.indent_spaces,
 		content = "",
 	}
