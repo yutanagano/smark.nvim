@@ -16,8 +16,10 @@ vim.api.nvim_create_autocmd("FileType", {
 	pattern = { "markdown", "text" },
 	callback = function()
 		vim.keymap.set("i", "<CR>", smark_private.callback_insert_newline, { buffer = true })
-		vim.keymap.set("i", "<C-d>", smark_private.callback_insert_promote, { buffer = true })
-		vim.keymap.set("i", "<C-t>", smark_private.callback_insert_demote, { buffer = true })
+		vim.keymap.set("i", "<C-t>", smark_private.callback_insert_indent, { buffer = true })
+		vim.keymap.set("i", "<C-d>", smark_private.callback_insert_unindent, { buffer = true })
+		vim.keymap.set("n", ">>", smark_private.callback_normal_indent, { buffer = true })
+		vim.keymap.set("n", "<<", smark_private.callback_normal_unindent, { buffer = true })
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
 	end,
 })
@@ -42,52 +44,7 @@ function smark_private.callback_insert_newline()
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
-function smark_private.callback_insert_promote()
-	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
-
-	if bounds == nil then
-		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
-		vim.api.nvim_feedkeys(ctrl_d, "n", false)
-		return
-	end
-
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	local original_ilevel = #ispec_array[rel_cursor_coords.row1]
-
-	for row1 = rel_cursor_coords.row1, #li_array do
-		local current_li = li_array[row1]
-		local current_ispec = ispec_array[row1]
-
-		if row1 ~= rel_cursor_coords.row1 and #current_ispec <= original_ilevel then
-			break
-		end
-
-		local original_preamble_len = list_item.get_preamble_length(current_li)
-
-		table.remove(current_ispec)
-
-		if #current_ispec == 0 then
-			current_li.indent_spaces = -1
-		else
-			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
-			current_li.is_ordered = current_ispec[#current_ispec].is_ordered
-		end
-
-		if rel_cursor_coords.row1 == row1 and rel_cursor_coords.col0 >= original_preamble_len then
-			rel_cursor_coords.col0 =
-				math.max(0, rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len)
-		end
-	end
-
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
-	smark_private.draw_list_items(li_array, bounds)
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
-end
-
-function smark_private.callback_insert_demote()
+function smark_private.callback_insert_indent()
 	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
@@ -97,47 +54,60 @@ function smark_private.callback_insert_demote()
 	end
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-
-	local current_li = li_array[rel_cursor_coords.row1]
-	local current_ispec = ispec_array[rel_cursor_coords.row1]
-	local lookbehind_li = li_array[math.max(1, rel_cursor_coords.row1 - 1)]
-	local lookbehind_ispec = ispec_array[math.max(1, rel_cursor_coords.row1 - 1)]
-	local lookahead_ref_ispec = ispec_array[rel_cursor_coords.row1 + 1]
-
-	local new_ilevelspec
-	if #lookbehind_ispec < #current_ispec then
-		return
-	elseif #lookbehind_ispec == #current_ispec then
-		local is_ordered
-		if lookahead_ref_ispec == nil or lookahead_ref_ispec[#current_ispec + 1] == nil then
-			is_ordered = current_li.is_ordered
-		else
-			is_ordered = lookahead_ref_ispec[#current_ispec + 1].is_ordered
-		end
-
-		new_ilevelspec = {
-			indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
-			is_ordered = is_ordered,
-		}
-	else
-		new_ilevelspec = {
-			indent_spaces = lookbehind_ispec[#current_ispec + 1].indent_spaces,
-			is_ordered = lookbehind_ispec[#current_ispec + 1].is_ordered,
-		}
-	end
-
-	table.insert(current_ispec, new_ilevelspec)
-
-	rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_ilevelspec.indent_spaces - current_li.indent_spaces
-	current_li.indent_spaces = new_ilevelspec.indent_spaces
-	current_li.is_ordered = new_ilevelspec.is_ordered
-
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
+	smark_private.apply_indent(li_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
 	smark_private.draw_list_items(li_array, bounds)
+
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+end
+
+function smark_private.callback_insert_unindent()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
+		vim.api.nvim_feedkeys(ctrl_d, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	smark_private.apply_unindent(li_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, bounds)
+
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+end
+
+function smark_private.callback_normal_indent()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local indent = vim.api.nvim_replace_termcodes(string.format("%d>>", vim.v.count1), true, false, true)
+		vim.api.nvim_feedkeys(indent, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local start_row = rel_cursor_coords.row1
+	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
+	smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, bounds)
+end
+
+function smark_private.callback_normal_unindent()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local unindent = vim.api.nvim_replace_termcodes(string.format("%d<<", vim.v.count1), true, false, true)
+		vim.api.nvim_feedkeys(unindent, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local start_row = rel_cursor_coords.row1
+	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
+	smark_private.apply_unindent(li_array, start_row, end_row)
+	smark_private.draw_list_items(li_array, bounds)
 end
 
 function smark_private.callback_normal_o()
@@ -152,7 +122,6 @@ function smark_private.callback_normal_o()
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
 	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
 	smark_private.draw_list_items(li_array, bounds)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -294,6 +263,139 @@ function smark_private.draw_list_items(li_array, bounds)
 		lis_as_strings[i] = list_item.to_string(li)
 	end
 	vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
+end
+
+---Modifies li_array and optionally rel_cursor_coords in place to reflect indenting.
+---@param li_array ListItem[]
+---@param start_row integer 1-indexed number of first line to unindent
+---@param end_row integer 1-indexed number of last line to indent
+---@param rel_cursor_coords? CursorCoords
+function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coords)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+
+	for row1 = start_row, end_row do
+		local current_li = li_array[row1]
+		local current_ispec = ispec_array[row1]
+		local lookbehind_li = li_array[math.max(1, row1 - 1)]
+		local lookbehind_ispec = ispec_array[math.max(1, row1 - 1)]
+		local lookahead_ref_ispec = ispec_array[row1 + 1]
+
+		local original_preamble_len = list_item.get_preamble_length(current_li)
+
+		local new_ilevelspec
+		if #lookbehind_ispec < #current_ispec then
+			return
+		elseif #lookbehind_ispec == #current_ispec then
+			local is_ordered
+			if lookahead_ref_ispec == nil or lookahead_ref_ispec[#current_ispec + 1] == nil then
+				is_ordered = false
+			else
+				is_ordered = lookahead_ref_ispec[#current_ispec + 1].is_ordered
+			end
+
+			new_ilevelspec = {
+				indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
+				is_ordered = is_ordered,
+			}
+		else
+			new_ilevelspec = {
+				indent_spaces = lookbehind_ispec[#current_ispec + 1].indent_spaces,
+				is_ordered = lookbehind_ispec[#current_ispec + 1].is_ordered,
+			}
+		end
+
+		table.insert(current_ispec, new_ilevelspec)
+
+		current_li.indent_spaces = new_ilevelspec.indent_spaces
+		current_li.is_ordered = new_ilevelspec.is_ordered
+		if
+			rel_cursor_coords ~= nil
+			and rel_cursor_coords.row1 == row1
+			and rel_cursor_coords.col0 >= original_preamble_len
+		then
+			rel_cursor_coords.col0 = rel_cursor_coords.col0
+				+ list_item.get_preamble_length(current_li)
+				- original_preamble_len
+		end
+	end
+
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+end
+
+---Modifies li_array and optionally rel_cursor_coords in place to reflect changes.
+---@param li_array ListItem[]
+---@param start_row integer 1-indexed number of first line to unindent
+---@param end_row integer 1-indexed number of last line to indent
+---@param rel_cursor_coords? CursorCoords
+function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_coords)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	local original_end_row_ilevel = #ispec_array[end_row]
+
+	local subtree_traversed = false
+
+	for row1 = start_row, #li_array do
+		local current_li = li_array[row1]
+		local current_ispec = ispec_array[row1]
+		local lookbehind_li = li_array[row1 - 1]
+		local lookbehind_ispec = ispec_array[row1 - 1]
+
+		if row1 > start_row then
+			for i = 1, #current_ispec do
+				if lookbehind_ispec[i] ~= nil then
+					current_ispec[i] = {
+						indent_spaces = lookbehind_ispec[i].indent_spaces,
+						is_ordered = current_ispec[i].is_ordered,
+					}
+				else
+					current_ispec[i] = {
+						indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
+						is_ordered = current_ispec[i].is_ordered,
+					}
+				end
+			end
+		end
+
+		if row1 <= end_row or (not subtree_traversed and #current_ispec > original_end_row_ilevel) then
+			local original_preamble_len = list_item.get_preamble_length(current_li)
+
+			table.remove(current_ispec)
+
+			if #current_ispec == 0 then
+				if current_li.indent_spaces == 0 then
+					current_li.indent_spaces = -1
+				else
+					current_ispec[1] = {
+						indent_spaces = math.max(0, current_li.indent_spaces - 2),
+						is_ordered = current_li.is_ordered,
+					}
+					current_li.indent_spaces = current_ispec[1].indent_spaces
+				end
+			else
+				current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
+				current_li.is_ordered = current_ispec[#current_ispec].is_ordered
+			end
+
+			if
+				rel_cursor_coords ~= nil
+				and rel_cursor_coords.row1 == row1
+				and rel_cursor_coords.col0 >= original_preamble_len
+			then
+				rel_cursor_coords.col0 = math.max(
+					0,
+					rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len
+				)
+			end
+		else
+			if not subtree_traversed then
+				subtree_traversed = true
+			end
+			if #current_ispec < original_end_row_ilevel then
+				break
+			end
+			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
+		end
+		format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+	end
 end
 
 return smark

@@ -1,5 +1,7 @@
 ## Version 0.2
 
+- [ ] Handle moving cursor to end of line correctly during edits
+- [ ] Handle insertion with "O"
 - [ ] Handle checking task markers
 - [ ] Handle multi-line bullets
 
@@ -15,5 +17,6 @@
 - [x] Handle block auto-formatting
 - [ ] Handle indentation:
   - [x] Automatically increase indentation on ending bullet with colon
-  - [x] Override <C-t> and <C-r> behaviours
-  - [ ] Override > and < behaviours (in normal and insert modes)
+  - [x] Override <C-t> and <C-d> in insert mode
+  - [x] Override >> and << commands
+  - [ ] Override > and < operators
