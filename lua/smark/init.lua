@@ -32,9 +32,8 @@ function smark_private.callback_insert_newline()
 	end
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+	smark_private.apply_insert_newline(li_array, rel_cursor_coords)
+	format.fix(li_array, rel_cursor_coords)
 
 	smark_private.draw_list_items(li_array, bounds)
 
@@ -151,17 +150,13 @@ end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> in insert mode at the specified relative cursor coordinates.
 ---@param li_array ListItem[]
----@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
-function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
+function smark_private.apply_insert_newline(li_array, rel_cursor_coords)
 	local current_li = li_array[rel_cursor_coords.row1]
-	local current_ispec = ispec_array[rel_cursor_coords.row1]
 
 	if rel_cursor_coords.col0 < current_li.original_preamble_length then
 		local new_li = list_item.get_empty_like(current_li)
 		table.insert(li_array, rel_cursor_coords.row1, new_li)
-		local new_ispec = format.get_indent_spec_like(current_ispec)
-		table.insert(ispec_array, rel_cursor_coords.row1, new_ispec)
 		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 		return
 	end
@@ -176,16 +171,13 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 	list_item.truncate_content_at_cursor(current_li, rel_cursor_coords.col0)
 
 	local new_li = list_item.get_empty_like(current_li)
-	local new_ispec = format.get_indent_spec_like(current_ispec)
 	new_li.content = content_after_cursor
 	if string.sub(current_li.content, -1) == ":" and content_after_cursor == "" then
 		local new_ispaces = list_item.get_nested_indent_spaces(current_li)
 		new_li.indent_spaces = new_ispaces
 		new_li.is_ordered = false
-		table.insert(new_ispec, { indent_spaces = new_ispaces, is_ordered = new_li.is_ordered })
 	end
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
-	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
 
 	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)

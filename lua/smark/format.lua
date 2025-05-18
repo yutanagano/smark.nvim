@@ -21,14 +21,16 @@ local M = {}
 function M.fix(li_array, rel_cursor_coords)
 	local ispec_array = {}
 	local index_counter = {}
-	local original_prev_indent_spaces
+	local prev_original_indent_spaces
 
 	for i, li in ipairs(li_array) do
+		local original_preamble_len = list_item.get_preamble_length(li)
+
 		if i == 1 then
 			li.index = 1
 			ispec_array[1] = { { is_ordered = li.is_ordered, indent_spaces = li.indent_spaces } }
 			index_counter[1] = 2
-			original_prev_indent_spaces = li.indent_spaces
+			prev_original_indent_spaces = li.indent_spaces
 		else
 			local prev_ispec = ispec_array[i - 1]
 			local prev_ilevel = #prev_ispec
@@ -36,18 +38,13 @@ function M.fix(li_array, rel_cursor_coords)
 			local ispec = {}
 			local ispaces_set = false
 
-			if li.indent_spaces == original_prev_indent_spaces then
+			if li.indent_spaces == prev_original_indent_spaces then
 				li.indent_spaces = prev_ispec[prev_ilevel].indent_spaces
 			else
-				original_prev_indent_spaces = li.indent_spaces
+				prev_original_indent_spaces = li.indent_spaces
 			end
 
 			if li.indent_spaces >= prev_nested_ispaces then
-				if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
-					rel_cursor_coords.col0 =
-						math.max(0, rel_cursor_coords.col0 + prev_nested_ispaces - li.indent_spaces)
-				end
-
 				li.index = 1
 				li.indent_spaces = prev_nested_ispaces
 
@@ -62,10 +59,6 @@ function M.fix(li_array, rel_cursor_coords)
 				local ispaces = prev_ispec[ilevel].indent_spaces
 				if li.indent_spaces >= ispaces then
 					if not ispaces_set then
-						if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
-							rel_cursor_coords.col0 = math.max(0, rel_cursor_coords.col0 + ispaces - li.indent_spaces)
-						end
-
 						if is_ordered ~= li.is_ordered then
 							index_counter[ilevel] = 1
 							is_ordered = li.is_ordered
@@ -83,6 +76,14 @@ function M.fix(li_array, rel_cursor_coords)
 			end
 
 			ispec_array[i] = ispec
+		end
+
+		if
+			rel_cursor_coords ~= nil
+			and rel_cursor_coords.row1 == i
+			and rel_cursor_coords.col0 >= original_preamble_len
+		then
+			rel_cursor_coords.col0 = rel_cursor_coords.col0 + list_item.get_preamble_length(li) - original_preamble_len
 		end
 	end
 
