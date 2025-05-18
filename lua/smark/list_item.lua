@@ -110,6 +110,10 @@ end
 ---@param li ListItem
 ---@return integer # Number of characters until start of contents
 function M.get_preamble_length(li)
+	if li.indent_spaces == -1 then
+		return 0
+	end
+
 	local marker_len, buffer_len
 
 	if li.is_ordered then

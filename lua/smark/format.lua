@@ -39,6 +39,7 @@ function M.fix(li_array, rel_cursor_coords)
 			local ispaces_set = false
 
 			if li.indent_spaces == prev_original_indent_spaces then
+				print(string.format("i=%d, prev_ilevel=%d", i, prev_ilevel))
 				li.indent_spaces = prev_ispec[prev_ilevel].indent_spaces
 			else
 				prev_original_indent_spaces = li.indent_spaces
@@ -57,7 +58,7 @@ function M.fix(li_array, rel_cursor_coords)
 			for ilevel = prev_ilevel, 1, -1 do
 				local is_ordered = prev_ispec[ilevel].is_ordered
 				local ispaces = prev_ispec[ilevel].indent_spaces
-				if li.indent_spaces >= ispaces then
+				if li.indent_spaces >= ispaces or (ilevel == 1 and li.indent_spaces ~= -1) then
 					if not ispaces_set then
 						if is_ordered ~= li.is_ordered then
 							index_counter[ilevel] = 1
