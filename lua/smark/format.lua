@@ -39,7 +39,6 @@ function M.fix(li_array, rel_cursor_coords)
 			local ispaces_set = false
 
 			if li.indent_spaces == prev_original_indent_spaces then
-				print(string.format("i=%d, prev_ilevel=%d", i, prev_ilevel))
 				li.indent_spaces = prev_ispec[prev_ilevel].indent_spaces
 			else
 				prev_original_indent_spaces = li.indent_spaces

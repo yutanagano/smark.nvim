@@ -1,5 +1,6 @@
 ## Version 0.2
 
+- [ ] Handle checking task markers
 - [ ] Handle multi-line bullets
 
 ## Version 0.1
@@ -14,5 +15,5 @@
 - [x] Handle block auto-formatting
 - [ ] Handle indentation:
   - [x] Automatically increase indentation on ending bullet with colon
-  - [ ] Override <C-t> and <C-r> behaviours
+  - [x] Override <C-t> and <C-r> behaviours
   - [ ] Override > and < behaviours (in normal and insert modes)

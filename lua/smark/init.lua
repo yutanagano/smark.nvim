@@ -53,23 +53,31 @@ function smark_private.callback_insert_promote()
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	local original_ilevel = #ispec_array[rel_cursor_coords.row1]
 
-	local current_li = li_array[rel_cursor_coords.row1]
-	local current_ispec = ispec_array[rel_cursor_coords.row1]
-	local original_preamble_len = list_item.get_preamble_length(current_li)
+	for row1 = rel_cursor_coords.row1, #li_array do
+		local current_li = li_array[row1]
+		local current_ispec = ispec_array[row1]
 
-	table.remove(current_ispec)
+		if row1 ~= rel_cursor_coords.row1 and #current_ispec <= original_ilevel then
+			break
+		end
 
-	if #current_ispec == 0 then
-		current_li.indent_spaces = -1
-	else
-		current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
-		current_li.is_ordered = current_ispec[#current_ispec].is_ordered
-	end
+		local original_preamble_len = list_item.get_preamble_length(current_li)
 
-	if rel_cursor_coords.col0 >= original_preamble_len then
-		rel_cursor_coords.col0 =
-			math.max(0, rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len)
+		table.remove(current_ispec)
+
+		if #current_ispec == 0 then
+			current_li.indent_spaces = -1
+		else
+			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
+			current_li.is_ordered = current_ispec[#current_ispec].is_ordered
+		end
+
+		if rel_cursor_coords.row1 == row1 and rel_cursor_coords.col0 >= original_preamble_len then
+			rel_cursor_coords.col0 =
+				math.max(0, rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len)
+		end
 	end
 
 	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
@@ -93,31 +101,29 @@ function smark_private.callback_insert_demote()
 
 	local current_li = li_array[rel_cursor_coords.row1]
 	local current_ispec = ispec_array[rel_cursor_coords.row1]
-	local ruler_li = li_array[math.max(1, rel_cursor_coords.row1 - 1)]
-	local ruler_ispec = ispec_array[math.max(1, rel_cursor_coords.row1 - 1)]
-	local ordered_ref_ispec = ispec_array[rel_cursor_coords.row1 + 1]
+	local lookbehind_li = li_array[math.max(1, rel_cursor_coords.row1 - 1)]
+	local lookbehind_ispec = ispec_array[math.max(1, rel_cursor_coords.row1 - 1)]
+	local lookahead_ref_ispec = ispec_array[rel_cursor_coords.row1 + 1]
 
 	local new_ilevelspec
-	if #ruler_ispec <= #current_ispec then
+	if #lookbehind_ispec < #current_ispec then
+		return
+	elseif #lookbehind_ispec == #current_ispec then
 		local is_ordered
-		if ordered_ref_ispec == nil or ordered_ref_ispec[#current_ispec + 1] == nil then
+		if lookahead_ref_ispec == nil or lookahead_ref_ispec[#current_ispec + 1] == nil then
 			is_ordered = current_li.is_ordered
 		else
-			is_ordered = ordered_ref_ispec[#current_ispec + 1].is_ordered or false
-		end
-
-		if #ruler_ispec < #current_ispec then
-			ruler_li = current_li
+			is_ordered = lookahead_ref_ispec[#current_ispec + 1].is_ordered
 		end
 
 		new_ilevelspec = {
-			indent_spaces = list_item.get_nested_indent_spaces(ruler_li),
+			indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
 			is_ordered = is_ordered,
 		}
 	else
 		new_ilevelspec = {
-			indent_spaces = ruler_ispec[#current_ispec + 1].indent_spaces,
-			is_ordered = ruler_ispec[#current_ispec + 1].is_ordered,
+			indent_spaces = lookbehind_ispec[#current_ispec + 1].indent_spaces,
+			is_ordered = lookbehind_ispec[#current_ispec + 1].is_ordered,
 		}
 	end
 
