@@ -38,30 +38,31 @@ vim.api.nvim_create_autocmd("FileType", {
 			cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
 			vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 		end, { buffer = true })
-		-- vim.keymap.set("n", "o", function()
-		-- 	local cursor_row_1_based, _ = table.unpack(vim.api.nvim_win_get_cursor(0))
-		-- 	local current_li = list_item.from_line(cursor_row_1_based)
-		--
-		-- 	if current_li == nil or current_li.content == "" then
-		-- 		vim.api.nvim_buf_set_lines(0, cursor_row_1_based, cursor_row_1_based, true, { "" })
-		-- 		vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, 0 })
-		-- 		vim.cmd("startinsert!")
-		-- 		return
-		-- 	end
-		--
-		-- 	local next_li = list_item.get_next(current_li, "")
-		--
-		-- 	vim.api.nvim_buf_set_lines(
-		-- 		0,
-		-- 		cursor_row_1_based,
-		-- 		cursor_row_1_based,
-		-- 		true,
-		-- 		{ list_item.to_string(next_li) }
-		-- 	)
-		--
-		-- 	vim.api.nvim_win_set_cursor(0, { cursor_row_1_based + 1, 0 })
-		-- 	vim.cmd("startinsert!")
-		-- end, { buffer = true })
+		vim.keymap.set("n", "o", function()
+			local cursor_coords, bounds, li_array = private.get_list_block_around_cursor()
+
+			if bounds == nil then
+				vim.api.nvim_buf_set_lines(0, cursor_coords.row1, cursor_coords.row1, true, { "" })
+				vim.api.nvim_win_set_cursor(0, { cursor_coords.row1 + 1, 0 })
+				vim.cmd("startinsert!")
+				return
+			end
+
+			local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+			local ispec_array = format.fix(li_array, rel_cursor_coords)
+			private.reflect_o(li_array, ispec_array, rel_cursor_coords)
+			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+			local lis_as_strings = {}
+			for i, li in ipairs(li_array) do
+				lis_as_strings[i] = list_item.to_string(li)
+			end
+			vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
+
+			cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+			vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+			vim.cmd("startinsert!")
+		end, { buffer = true })
 	end,
 })
 
@@ -115,7 +116,7 @@ private.get_list_block_around_cursor = function()
 	return cursor_coords, bounds, li_array
 end
 
----Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> at the specified relative cursor coordinates.
+---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> in insert mode at the specified relative cursor coordinates.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
@@ -149,6 +150,33 @@ function private.reflect_newline(li_array, ispec_array, rel_cursor_coords)
 		new_li.indent_spaces = new_ispaces
 		table.insert(new_ispec, new_ispaces)
 	end
+	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
+	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
+
+	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
+	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
+end
+
+---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of "o" in normal mode at the specified relative cursor coordinates.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param rel_cursor_coords CursorCoords
+function private.reflect_o(li_array, ispec_array, rel_cursor_coords)
+	local current_li = li_array[rel_cursor_coords.row1]
+	local current_ispec = ispec_array[rel_cursor_coords.row1]
+
+	if rel_cursor_coords.row1 == #li_array and current_li.content == "" then
+		local new_li = list_item.get_empty_like(current_li)
+		new_li.indent_spaces = -1
+		table.insert(li_array, new_li)
+		table.insert(ispec_array, {})
+		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
+		rel_cursor_coords.col0 = 0
+		return
+	end
+
+	local new_li = list_item.get_empty_like(current_li)
+	local new_ispec = format.get_indent_spec_like(current_ispec)
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
 	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
 

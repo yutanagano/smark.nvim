@@ -91,24 +91,26 @@ function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 	for i, li in ipairs(li_array) do
 		local current_ilevel = #ispec_array[i]
 
-		if index_counter[current_ilevel].is_ordered ~= li.is_ordered then
-			index_counter[current_ilevel].index = 1
-			index_counter[current_ilevel].is_ordered = li.is_ordered
-		end
-
-		if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
-			local prev_preamble_len = list_item.get_preamble_length(li)
-			li.index = index_counter[current_ilevel].index
-			if rel_cursor_coords.col0 >= prev_preamble_len then
-				local new_preamble_len = list_item.get_preamble_length(li)
-				rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_preamble_len - prev_preamble_len
+		if current_ilevel > 0 then
+			if index_counter[current_ilevel].is_ordered ~= li.is_ordered then
+				index_counter[current_ilevel].index = 1
+				index_counter[current_ilevel].is_ordered = li.is_ordered
 			end
-		else
-			li.index = index_counter[current_ilevel].index
-		end
 
-		index_counter[current_ilevel].index = index_counter[current_ilevel].index + 1
-		index_counter[current_ilevel + 1] = { index = 1, is_ordered = false }
+			if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
+				local prev_preamble_len = list_item.get_preamble_length(li)
+				li.index = index_counter[current_ilevel].index
+				if rel_cursor_coords.col0 >= prev_preamble_len then
+					local new_preamble_len = list_item.get_preamble_length(li)
+					rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_preamble_len - prev_preamble_len
+				end
+			else
+				li.index = index_counter[current_ilevel].index
+			end
+
+			index_counter[current_ilevel].index = index_counter[current_ilevel].index + 1
+			index_counter[current_ilevel + 1] = { index = 1, is_ordered = false }
+		end
 	end
 end
 

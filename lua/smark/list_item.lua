@@ -64,7 +64,7 @@ end
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain unordered list item
 function list_item.parse_unordered_list_item_text(line_text)
-	local pattern = "^((%s*)%-%s+)(.*)"
+	local pattern = "^((%s*)[%-%*%+]%s+)(.*)"
 	local preamble, indent, content = string.match(line_text, pattern)
 
 	if preamble == nil then
