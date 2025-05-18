@@ -389,9 +389,6 @@ function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_c
 			if not subtree_traversed then
 				subtree_traversed = true
 			end
-			if #current_ispec < original_end_row_ilevel then
-				break
-			end
 			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
 		end
 		format.fix_numbering(li_array, ispec_array, rel_cursor_coords)

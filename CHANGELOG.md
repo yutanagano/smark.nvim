@@ -17,6 +17,6 @@
 - [x] Handle block auto-formatting
 - [ ] Handle indentation:
   - [x] Automatically increase indentation on ending bullet with colon
-  - [x] Override <C-t> and <C-d> in insert mode
-  - [x] Override >> and << commands
+  - [ ] Override <C-t> and <C-d> in insert mode TODO: implement dynamic indent correction on indentation (unindent is already done)
+  - [ ] Override >> and << commands
   - [ ] Override > and < operators
