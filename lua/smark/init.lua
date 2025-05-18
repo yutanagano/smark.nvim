@@ -61,10 +61,11 @@ function smark_private.callback_insert_promote()
 	local new_ilevelspec
 	if #current_ispec == 0 then
 		new_ilevelspec = { indent_spaces = -1, is_ordered = false }
-		rel_cursor_coords.col0 = rel_cursor_coords.col0 - list_item.get_preamble_length(current_li)
+		rel_cursor_coords.col0 = math.max(0, rel_cursor_coords.col0 - list_item.get_preamble_length(current_li))
 	else
 		new_ilevelspec = current_ispec[#current_ispec]
-		rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_ilevelspec.indent_spaces - current_li.indent_spaces
+		rel_cursor_coords.col0 =
+			math.max(0, rel_cursor_coords.col0 + new_ilevelspec.indent_spaces - current_li.indent_spaces)
 	end
 	current_li.indent_spaces = new_ilevelspec.indent_spaces
 	current_li.is_ordered = new_ilevelspec.is_ordered
@@ -76,7 +77,60 @@ function smark_private.callback_insert_promote()
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
-function smark_private.callback_insert_demote() end
+function smark_private.callback_insert_demote()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local ctrl_t = vim.api.nvim_replace_termcodes("<C-t>", true, false, true)
+		vim.api.nvim_feedkeys(ctrl_t, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+
+	local current_li = li_array[rel_cursor_coords.row1]
+	local current_ispec = ispec_array[rel_cursor_coords.row1]
+	local ruler_li = li_array[math.min(1, rel_cursor_coords.row1 - 1)]
+	local ruler_ispec = ispec_array[math.min(1, rel_cursor_coords.row1 - 1)]
+	local ordered_ref_ispec = ispec_array[rel_cursor_coords.row1 + 1]
+
+	local new_ilevelspec
+	if #ruler_ispec <= #current_ispec then
+		local is_ordered
+		if ordered_ref_ispec == nil or ordered_ref_ispec[#current_ispec + 1] == nil then
+			is_ordered = current_li.is_ordered
+		else
+			is_ordered = ordered_ref_ispec[#current_ispec + 1].is_ordered or false
+		end
+
+		if #ruler_ispec < #current_ispec then
+			ruler_li = current_li
+		end
+
+		new_ilevelspec = {
+			indent_spaces = list_item.get_nested_indent_spaces(ruler_li),
+			is_ordered = is_ordered,
+		}
+	else
+		new_ilevelspec = {
+			indent_spaces = ruler_ispec[#current_ispec + 1].indent_spaces,
+			is_ordered = ruler_ispec[#current_ispec + 1].is_ordered,
+		}
+	end
+
+	table.insert(current_ispec, new_ilevelspec)
+
+	rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_ilevelspec.indent_spaces - current_li.indent_spaces
+	current_li.indent_spaces = new_ilevelspec.indent_spaces
+	current_li.is_ordered = new_ilevelspec.is_ordered
+
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+	smark_private.draw_list_items(li_array, bounds)
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+end
 
 function smark_private.callback_normal_o()
 	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
