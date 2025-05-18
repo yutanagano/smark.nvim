@@ -5,7 +5,7 @@
 ---@field index integer The item index number.
 ---@field indent_spaces integer The indentation level of the line in number of spaces. -1 results in a line with no list marker element.
 ---@field content string The text content of the list item.
----@field original_preamble_length integer The original number of characters before the content begins
+---@field read_time_preamble_length integer The original number of characters before the content begins (at read time). Undefined for newly generated list items.
 
 local M = {}
 
@@ -56,7 +56,7 @@ function M.parse_ordered_list_item_text(line_text)
 		index = 1,
 		indent_spaces = string.len(indent),
 		content = content,
-		original_preamble_length = preamble_length,
+		read_time_preamble_length = preamble_length,
 	}
 end
 
@@ -84,7 +84,7 @@ function M.parse_unordered_list_item_text(line_text)
 		index = 1,
 		indent_spaces = string.len(indent),
 		content = content,
-		original_preamble_length = preamble_length,
+		read_time_preamble_length = preamble_length,
 	}
 end
 
@@ -106,7 +106,7 @@ function M.parse_task_marker_text(line_text)
 	return true, is_completed, string.len(preamble), content
 end
 
----See @field original_preamble_length for the original number of characters at read time.
+---See @field read_time_preamble_length for the original number of characters at read time.
 ---@param li ListItem
 ---@return integer # Number of characters until start of contents
 function M.get_preamble_length(li)
@@ -184,11 +184,11 @@ end
 ---@return string
 function M.get_content_after_cursor(li, cursor_col)
 	assert(
-		cursor_col >= li.original_preamble_length,
+		cursor_col >= li.read_time_preamble_length,
 		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
 	)
 
-	local relative_col_index = cursor_col - li.original_preamble_length + 1
+	local relative_col_index = cursor_col - li.read_time_preamble_length + 1
 	return string.sub(li.content, relative_col_index)
 end
 
@@ -197,11 +197,11 @@ end
 ---@param cursor_col integer 0-indexed cursor column position
 function M.truncate_content_at_cursor(li, cursor_col)
 	assert(
-		cursor_col >= li.original_preamble_length,
+		cursor_col >= li.read_time_preamble_length,
 		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
 	)
 
-	local relative_cutoff = cursor_col - li.original_preamble_length
+	local relative_cutoff = cursor_col - li.read_time_preamble_length
 	li.content = string.sub(li.content, 1, relative_cutoff)
 end
 

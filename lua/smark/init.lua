@@ -154,7 +154,7 @@ end
 function smark_private.apply_insert_newline(li_array, rel_cursor_coords)
 	local current_li = li_array[rel_cursor_coords.row1]
 
-	if rel_cursor_coords.col0 < current_li.original_preamble_length then
+	if rel_cursor_coords.col0 < current_li.read_time_preamble_length then
 		local new_li = list_item.get_empty_like(current_li)
 		table.insert(li_array, rel_cursor_coords.row1, new_li)
 		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1

@@ -16,4 +16,3 @@
   - [x] Automatically increase indentation on ending bullet with colon
   - [ ] Override <C-t> and <C-r> behaviours
   - [ ] Override > and < behaviours (in normal and insert modes)
-  - [ ] Something
