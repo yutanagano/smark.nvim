@@ -2,13 +2,17 @@
 ---@field row1 integer 1-indexed row number of cursor
 ---@field col0 integer 0-indexed column number of cursor
 
----@alias indent_spec integer[] Integer array describing the number of indent spaces required to align to each level, up to current
+---@alias indent_spec IndentLevelSpec[] Integer array describing the number of indent spaces required to align to each level, up to current
+
+---@class IndentLevelSpec
+---@field is_ordered boolean
+---@field indent_spaces integer
 
 local list_item = require("smark.list_item")
 
 local M = {}
 
----Mutate array of list items in place to enforce correct indentation.
+---Mutate array of list items in place to enforce correct indentation and numbering.
 ---Optionally mutate relative cursor coordinates in place if supplied.
 ---Return a corresponding array of indent specs that describe the resulting correct indentation information.
 ---@param li_array ListItem[]
@@ -17,18 +21,26 @@ local M = {}
 function M.fix(li_array, rel_cursor_coords)
 	local ispec_array = {}
 	local index_counter = {}
+	local original_prev_indent_spaces
 
 	for i, li in ipairs(li_array) do
 		if i == 1 then
 			li.index = 1
-			ispec_array[1] = { li.indent_spaces }
-			index_counter[1] = { index = 2, is_ordered = li.is_ordered }
+			ispec_array[1] = { { is_ordered = li.is_ordered, indent_spaces = li.indent_spaces } }
+			index_counter[1] = 2
+			original_prev_indent_spaces = li.indent_spaces
 		else
-			local ispec = {}
-			local ispaces_set = false
 			local prev_ispec = ispec_array[i - 1]
 			local prev_ilevel = #prev_ispec
 			local prev_nested_ispaces = list_item.get_nested_indent_spaces(li_array[i - 1])
+			local ispec = {}
+			local ispaces_set = false
+
+			if li.indent_spaces == original_prev_indent_spaces then
+				li.indent_spaces = prev_ispec[prev_ilevel].indent_spaces
+			else
+				original_prev_indent_spaces = li.indent_spaces
+			end
 
 			if li.indent_spaces >= prev_nested_ispaces then
 				if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
@@ -39,33 +51,34 @@ function M.fix(li_array, rel_cursor_coords)
 				li.index = 1
 				li.indent_spaces = prev_nested_ispaces
 
-				ispec[prev_ilevel + 1] = prev_nested_ispaces
-				index_counter[prev_ilevel + 1] = { index = 2, is_ordered = li.is_ordered }
+				ispec[prev_ilevel + 1] = { is_ordered = li.is_ordered, indent_spaces = prev_nested_ispaces }
+				index_counter[prev_ilevel + 1] = 2
 
 				ispaces_set = true
 			end
 
 			for ilevel = prev_ilevel, 1, -1 do
-				local ispaces = prev_ispec[ilevel]
+				local is_ordered = prev_ispec[ilevel].is_ordered
+				local ispaces = prev_ispec[ilevel].indent_spaces
 				if li.indent_spaces >= ispaces then
 					if not ispaces_set then
 						if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
 							rel_cursor_coords.col0 = math.max(0, rel_cursor_coords.col0 + ispaces - li.indent_spaces)
 						end
 
-						if index_counter[ilevel].is_ordered ~= li.is_ordered then
-							index_counter[ilevel].index = 1
-							index_counter[ilevel].is_ordered = li.is_ordered
+						if is_ordered ~= li.is_ordered then
+							index_counter[ilevel] = 1
+							is_ordered = li.is_ordered
 						end
 
-						li.index = index_counter[ilevel].index
+						li.index = index_counter[ilevel]
 						li.indent_spaces = ispaces
 
-						index_counter[ilevel].index = index_counter[ilevel].index + 1
+						index_counter[ilevel] = index_counter[ilevel] + 1
 
 						ispaces_set = true
 					end
-					ispec[ilevel] = ispaces
+					ispec[ilevel] = { is_ordered = is_ordered, indent_spaces = ispaces }
 				end
 			end
 
@@ -86,30 +99,39 @@ function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 		string.format("Lengths of li_array (%d) and ispec_array (%d) must be the same", #li_array, #ispec_array)
 	)
 
-	local index_counter = { { index = 1, is_ordered = false } }
+	local index_counter = { 1 }
 
 	for i, li in ipairs(li_array) do
 		local current_ilevel = #ispec_array[i]
 
-		if current_ilevel > 0 then
-			if index_counter[current_ilevel].is_ordered ~= li.is_ordered then
-				index_counter[current_ilevel].index = 1
-				index_counter[current_ilevel].is_ordered = li.is_ordered
+		if current_ilevel == 0 then
+			index_counter[1] = 1
+		else
+			if
+				i > 1
+				and ispec_array[i - 1][current_ilevel] ~= nil
+				and ispec_array[i - 1][current_ilevel].is_ordered ~= li.is_ordered
+			then
+				index_counter[current_ilevel] = 1
+			end
+
+			if index_counter[current_ilevel] == nil then
+				index_counter[current_ilevel] = 1
 			end
 
 			if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
 				local prev_preamble_len = list_item.get_preamble_length(li)
-				li.index = index_counter[current_ilevel].index
+				li.index = index_counter[current_ilevel]
 				if rel_cursor_coords.col0 >= prev_preamble_len then
 					local new_preamble_len = list_item.get_preamble_length(li)
 					rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_preamble_len - prev_preamble_len
 				end
 			else
-				li.index = index_counter[current_ilevel].index
+				li.index = index_counter[current_ilevel]
 			end
 
-			index_counter[current_ilevel].index = index_counter[current_ilevel].index + 1
-			index_counter[current_ilevel + 1] = { index = 1, is_ordered = false }
+			index_counter[current_ilevel] = index_counter[current_ilevel] + 1
+			index_counter[current_ilevel + 1] = 1
 		end
 	end
 end
@@ -118,8 +140,11 @@ end
 ---@return indent_spec
 function M.get_indent_spec_like(ispec)
 	local new_ispec = {}
-	for i, v in ipairs(ispec) do
-		new_ispec[i] = v
+	for i, ils in ipairs(ispec) do
+		new_ispec[i] = {
+			is_ordered = ils.is_ordered,
+			indent_spaces = ils.indent_spaces,
+		}
 	end
 	return new_ispec
 end

@@ -7,24 +7,24 @@
 ---@field content string The text content of the list item.
 ---@field original_preamble_length integer The original number of characters before the content begins
 
-local list_item = {}
+local M = {}
 
 ---@param line_num integer 1-indexed line number to parse
 ---@return ListItem|nil # Nil if line does not contain list item
-function list_item.from_line(line_num)
+function M.from_line(line_num)
 	local line_text = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
-	return list_item.from_string(line_text)
+	return M.from_string(line_text)
 end
 
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain list item
-function list_item.from_string(line_text)
-	local li = list_item.parse_ordered_list_item_text(line_text)
+function M.from_string(line_text)
+	local li = M.parse_ordered_list_item_text(line_text)
 	if li ~= nil then
 		return li
 	end
 
-	li = list_item.parse_unordered_list_item_text(line_text)
+	li = M.parse_unordered_list_item_text(line_text)
 	if li ~= nil then
 		return li
 	end
@@ -34,7 +34,7 @@ end
 
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain ordered list item
-function list_item.parse_ordered_list_item_text(line_text)
+function M.parse_ordered_list_item_text(line_text)
 	local pattern = "^((%s*)%d+[%.%)]%s+)(.*)"
 	local preamble, indent, content = string.match(line_text, pattern)
 
@@ -43,8 +43,7 @@ function list_item.parse_ordered_list_item_text(line_text)
 	end
 
 	local preamble_length = string.len(preamble)
-	local is_task, is_completed, corrected_preamble_length, corrected_content =
-		list_item.parse_task_marker_text(line_text)
+	local is_task, is_completed, corrected_preamble_length, corrected_content = M.parse_task_marker_text(line_text)
 	if is_task then
 		preamble_length = corrected_preamble_length
 		content = corrected_content
@@ -63,7 +62,7 @@ end
 
 ---@param line_text string Text of line to parse
 ---@return ListItem|nil # Nil if line does not contain unordered list item
-function list_item.parse_unordered_list_item_text(line_text)
+function M.parse_unordered_list_item_text(line_text)
 	local pattern = "^((%s*)[%-%*%+]%s+)(.*)"
 	local preamble, indent, content = string.match(line_text, pattern)
 
@@ -72,8 +71,7 @@ function list_item.parse_unordered_list_item_text(line_text)
 	end
 
 	local preamble_length = string.len(preamble)
-	local is_task, is_completed, corrected_preamble_length, corrected_content =
-		list_item.parse_task_marker_text(line_text)
+	local is_task, is_completed, corrected_preamble_length, corrected_content = M.parse_task_marker_text(line_text)
 	if is_task then
 		preamble_length = corrected_preamble_length
 		content = corrected_content
@@ -95,7 +93,7 @@ end
 ---@return boolean # True if marked as completed
 ---@return integer # Preamble length correcting for task marker
 ---@return string # Detected content correcting for task marker
-function list_item.parse_task_marker_text(line_text)
+function M.parse_task_marker_text(line_text)
 	local pattern = "^(%s*%-?%d*%.?%s%s?%s?%s?%[([%sxX])%]%s+)(.*)"
 	local preamble, completion, content = string.match(line_text, pattern)
 
@@ -111,7 +109,7 @@ end
 ---See @field original_preamble_length for the original number of characters at read time.
 ---@param li ListItem
 ---@return integer # Number of characters until start of contents
-function list_item.get_preamble_length(li)
+function M.get_preamble_length(li)
 	local marker_len, buffer_len
 
 	if li.is_ordered then
@@ -131,7 +129,7 @@ end
 
 ---@param li ListItem
 ---@return integer # The number of spaces required to be registered as nested list item of one given
-function list_item.get_nested_indent_spaces(li)
+function M.get_nested_indent_spaces(li)
 	if li.is_ordered then
 		return li.indent_spaces + string.len(tostring(li.index)) + 2
 	else
@@ -141,7 +139,7 @@ end
 
 ---@param li ListItem
 ---@return string
-function list_item.to_string(li)
+function M.to_string(li)
 	if li.indent_spaces == -1 then
 		return li.content
 	end
@@ -169,7 +167,7 @@ end
 
 ---@param li ListItem
 ---@return ListItem
-function list_item.get_empty_like(li)
+function M.get_empty_like(li)
 	return {
 		is_ordered = li.is_ordered,
 		is_task = li.is_task,
@@ -184,7 +182,7 @@ end
 ---@param li ListItem
 ---@param cursor_col integer 0-indexed cursor column position
 ---@return string
-function list_item.get_content_after_cursor(li, cursor_col)
+function M.get_content_after_cursor(li, cursor_col)
 	assert(
 		cursor_col >= li.original_preamble_length,
 		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
@@ -197,7 +195,7 @@ end
 ---Only call this function if the cursor position is inside of the list item's content.
 ---@param li ListItem
 ---@param cursor_col integer 0-indexed cursor column position
-function list_item.truncate_content_at_cursor(li, cursor_col)
+function M.truncate_content_at_cursor(li, cursor_col)
 	assert(
 		cursor_col >= li.original_preamble_length,
 		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
@@ -207,4 +205,4 @@ function list_item.truncate_content_at_cursor(li, cursor_col)
 	li.content = string.sub(li.content, 1, relative_cutoff)
 end
 
-return list_item
+return M

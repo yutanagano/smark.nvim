@@ -6,7 +6,7 @@ local list_item = require("smark.list_item")
 local format = require("smark.format")
 
 local smark = {}
-local private = {}
+local smark_private = {}
 
 smark.setup = function(_)
 	-- nothing for now
@@ -15,61 +15,94 @@ end
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = { "markdown", "text" },
 	callback = function()
-		vim.keymap.set("i", "<CR>", function()
-			local cursor_coords, bounds, li_array = private.get_list_block_around_cursor()
-
-			if bounds == nil then
-				local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
-				vim.api.nvim_feedkeys(newline, "n", false)
-				return
-			end
-
-			local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-			local ispec_array = format.fix(li_array, rel_cursor_coords)
-			private.reflect_newline(li_array, ispec_array, rel_cursor_coords)
-			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
-			local lis_as_strings = {}
-			for i, li in ipairs(li_array) do
-				lis_as_strings[i] = list_item.to_string(li)
-			end
-			vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
-
-			cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
-			vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
-		end, { buffer = true })
-		vim.keymap.set("n", "o", function()
-			local cursor_coords, bounds, li_array = private.get_list_block_around_cursor()
-
-			if bounds == nil then
-				vim.api.nvim_buf_set_lines(0, cursor_coords.row1, cursor_coords.row1, true, { "" })
-				vim.api.nvim_win_set_cursor(0, { cursor_coords.row1 + 1, 0 })
-				vim.cmd("startinsert!")
-				return
-			end
-
-			local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-			local ispec_array = format.fix(li_array, rel_cursor_coords)
-			private.reflect_o(li_array, ispec_array, rel_cursor_coords)
-			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
-			local lis_as_strings = {}
-			for i, li in ipairs(li_array) do
-				lis_as_strings[i] = list_item.to_string(li)
-			end
-			vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
-
-			cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
-			vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
-			vim.cmd("startinsert!")
-		end, { buffer = true })
+		vim.keymap.set("i", "<CR>", smark_private.callback_insert_newline, { buffer = true })
+		vim.keymap.set("i", "<C-d>", smark_private.callback_insert_promote, { buffer = true })
+		vim.keymap.set("i", "<C-t>", smark_private.callback_insert_demote, { buffer = true })
+		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
 	end,
 })
+
+function smark_private.callback_insert_newline()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
+		vim.api.nvim_feedkeys(newline, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+	smark_private.draw_list_items(li_array, bounds)
+
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+end
+
+function smark_private.callback_insert_promote()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
+		vim.api.nvim_feedkeys(ctrl_d, "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+
+	local current_li = li_array[rel_cursor_coords.row1]
+	local current_ispec = ispec_array[rel_cursor_coords.row1]
+
+	table.remove(current_ispec)
+
+	local new_ilevelspec
+	if #current_ispec == 0 then
+		new_ilevelspec = { indent_spaces = -1, is_ordered = false }
+		rel_cursor_coords.col0 = rel_cursor_coords.col0 - list_item.get_preamble_length(current_li)
+	else
+		new_ilevelspec = current_ispec[#current_ispec]
+		rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_ilevelspec.indent_spaces - current_li.indent_spaces
+	end
+	current_li.indent_spaces = new_ilevelspec.indent_spaces
+	current_li.is_ordered = new_ilevelspec.is_ordered
+
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+	smark_private.draw_list_items(li_array, bounds)
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+end
+
+function smark_private.callback_insert_demote() end
+
+function smark_private.callback_normal_o()
+	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		vim.api.nvim_feedkeys("o", "n", false)
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+	smark_private.draw_list_items(li_array, bounds)
+
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+	vim.cmd("startinsert!")
+end
 
 ---@return CursorCoords
 ---@return TextBlockBounds|nil # Boundaries of containing list block, nil if cursor not in list block
 ---@return ListItem[] # Array of list items detected inside the list block
-private.get_list_block_around_cursor = function()
+function smark_private.get_list_block_around_cursor()
 	local cursor_row1, cursor_col0 = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row1 = cursor_row1, col0 = cursor_col0 }
 
@@ -120,7 +153,7 @@ end
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
-function private.reflect_newline(li_array, ispec_array, rel_cursor_coords)
+function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
 	local current_li = li_array[rel_cursor_coords.row1]
 	local current_ispec = ispec_array[rel_cursor_coords.row1]
 
@@ -148,7 +181,8 @@ function private.reflect_newline(li_array, ispec_array, rel_cursor_coords)
 	if string.sub(current_li.content, -1) == ":" and content_after_cursor == "" then
 		local new_ispaces = list_item.get_nested_indent_spaces(current_li)
 		new_li.indent_spaces = new_ispaces
-		table.insert(new_ispec, new_ispaces)
+		new_li.is_ordered = false
+		table.insert(new_ispec, { indent_spaces = new_ispaces, is_ordered = new_li.is_ordered })
 	end
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
 	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
@@ -161,7 +195,7 @@ end
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
-function private.reflect_o(li_array, ispec_array, rel_cursor_coords)
+function smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
 	local current_li = li_array[rel_cursor_coords.row1]
 	local current_ispec = ispec_array[rel_cursor_coords.row1]
 
@@ -177,11 +211,28 @@ function private.reflect_o(li_array, ispec_array, rel_cursor_coords)
 
 	local new_li = list_item.get_empty_like(current_li)
 	local new_ispec = format.get_indent_spec_like(current_ispec)
+	if string.sub(current_li.content, -1) == ":" then
+		local new_ispaces = list_item.get_nested_indent_spaces(current_li)
+		new_li.indent_spaces = new_ispaces
+		new_li.is_ordered = false
+		table.insert(new_ispec, { indent_spaces = new_ispaces, is_ordered = new_li.is_ordered })
+	end
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
 	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
 
 	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
+end
+
+---Draw out string representations of list items in li_array between the lines specified by bounds.
+---@param li_array ListItem[]
+---@param bounds TextBlockBounds
+function smark_private.draw_list_items(li_array, bounds)
+	local lis_as_strings = {}
+	for i, li in ipairs(li_array) do
+		lis_as_strings[i] = list_item.to_string(li)
+	end
+	vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
 end
 
 return smark
