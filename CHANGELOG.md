@@ -22,4 +22,5 @@
   - [x] Automatically increase indentation on ending bullet with colon
   - [x] Override <C-t> and <C-d> in insert mode
   - [x] Override >> and << commands
-  - [ ] Override > and < operators
+  - [ ] Override > and < operators in normal mode
+  - [ ] Override > and < operators in visual mode
