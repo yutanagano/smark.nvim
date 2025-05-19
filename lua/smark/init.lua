@@ -273,53 +273,75 @@ end
 function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coords)
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 
-	for row1 = start_row, end_row do
+	for row1 = start_row, #li_array do
 		local current_li = li_array[row1]
 		local current_ispec = ispec_array[row1]
+		local current_ilevel = #current_ispec
 		local lookbehind_li = li_array[math.max(1, row1 - 1)]
 		local lookbehind_ispec = ispec_array[math.max(1, row1 - 1)]
-		local lookahead_ref_ispec = ispec_array[row1 + 1]
+		local lookbehind_ilevel = #lookbehind_ispec
 
-		local original_preamble_len = list_item.get_preamble_length(current_li)
+		if row1 > start_row then
+			for i = 1, current_ilevel do
+				if lookbehind_ispec[i] ~= nil then
+					current_ispec[i] = {
+						indent_spaces = lookbehind_ispec[i].indent_spaces,
+						is_ordered = current_ispec[i].is_ordered,
+					}
+				else
+					current_ispec[i] = {
+						indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
+						is_ordered = current_ispec[i].is_ordered,
+					}
+				end
+			end
+		end
 
-		local new_ilevelspec
-		if #lookbehind_ispec < #current_ispec then
-			return
-		elseif #lookbehind_ispec == #current_ispec then
-			local is_ordered
-			if lookahead_ref_ispec == nil or lookahead_ref_ispec[#current_ispec + 1] == nil then
-				is_ordered = false
+		if row1 <= end_row then
+			local lookahead_ref_ispec = ispec_array[row1 + 1]
+			local original_preamble_len = list_item.get_preamble_length(current_li)
+
+			local new_ilevelspec
+			if lookbehind_ilevel < current_ilevel then
+				return
+			elseif lookbehind_ilevel == current_ilevel then
+				local is_ordered
+				if lookahead_ref_ispec == nil or lookahead_ref_ispec[current_ilevel + 1] == nil then
+					is_ordered = false
+				else
+					is_ordered = lookahead_ref_ispec[current_ilevel + 1].is_ordered
+				end
+
+				new_ilevelspec = {
+					indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
+					is_ordered = is_ordered,
+				}
 			else
-				is_ordered = lookahead_ref_ispec[#current_ispec + 1].is_ordered
+				new_ilevelspec = {
+					indent_spaces = lookbehind_ispec[current_ilevel + 1].indent_spaces,
+					is_ordered = lookbehind_ispec[current_ilevel + 1].is_ordered,
+				}
 			end
 
-			new_ilevelspec = {
-				indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
-				is_ordered = is_ordered,
-			}
+			table.insert(current_ispec, new_ilevelspec)
+
+			current_li.indent_spaces = new_ilevelspec.indent_spaces
+			current_li.is_ordered = new_ilevelspec.is_ordered
+			if
+				rel_cursor_coords ~= nil
+				and rel_cursor_coords.row1 == row1
+				and rel_cursor_coords.col0 >= original_preamble_len
+			then
+				rel_cursor_coords.col0 = rel_cursor_coords.col0
+					+ list_item.get_preamble_length(current_li)
+					- original_preamble_len
+			end
+
+			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 		else
-			new_ilevelspec = {
-				indent_spaces = lookbehind_ispec[#current_ispec + 1].indent_spaces,
-				is_ordered = lookbehind_ispec[#current_ispec + 1].is_ordered,
-			}
-		end
-
-		table.insert(current_ispec, new_ilevelspec)
-
-		current_li.indent_spaces = new_ilevelspec.indent_spaces
-		current_li.is_ordered = new_ilevelspec.is_ordered
-		if
-			rel_cursor_coords ~= nil
-			and rel_cursor_coords.row1 == row1
-			and rel_cursor_coords.col0 >= original_preamble_len
-		then
-			rel_cursor_coords.col0 = rel_cursor_coords.col0
-				+ list_item.get_preamble_length(current_li)
-				- original_preamble_len
+			current_li.indent_spaces = current_ispec[current_ilevel].indent_spaces
 		end
 	end
-
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 end
 
 ---Modifies li_array and optionally rel_cursor_coords in place to reflect changes.
@@ -385,13 +407,13 @@ function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_c
 					rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len
 				)
 			end
+			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 		else
 			if not subtree_traversed then
 				subtree_traversed = true
 			end
 			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
 		end
-		format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 	end
 end
 
