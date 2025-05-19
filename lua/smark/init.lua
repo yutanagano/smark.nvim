@@ -29,7 +29,7 @@ function smark_private.callback_insert_newline()
 
 	if bounds == nil then
 		local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
-		vim.api.nvim_feedkeys(newline, "n", false)
+		vim.api.nvim_feedkeys(newline, "ni", false)
 		return
 	end
 
@@ -51,7 +51,7 @@ function smark_private.callback_insert_indent()
 
 	if bounds == nil then
 		local ctrl_t = vim.api.nvim_replace_termcodes("<C-t>", true, false, true)
-		vim.api.nvim_feedkeys(ctrl_t, "n", false)
+		vim.api.nvim_feedkeys(ctrl_t, "ni", false)
 		return
 	end
 
@@ -68,7 +68,7 @@ function smark_private.callback_insert_unindent()
 
 	if bounds == nil then
 		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
-		vim.api.nvim_feedkeys(ctrl_d, "n", false)
+		vim.api.nvim_feedkeys(ctrl_d, "ni", false)
 		return
 	end
 
@@ -85,7 +85,7 @@ function smark_private.callback_normal_indent()
 
 	if bounds == nil then
 		local indent = vim.api.nvim_replace_termcodes(string.format("%d>>", vim.v.count1), true, false, true)
-		vim.api.nvim_feedkeys(indent, "n", false)
+		vim.api.nvim_feedkeys(indent, "ni", false)
 		return
 	end
 
@@ -101,7 +101,7 @@ function smark_private.callback_normal_unindent()
 
 	if bounds == nil then
 		local unindent = vim.api.nvim_replace_termcodes(string.format("%d<<", vim.v.count1), true, false, true)
-		vim.api.nvim_feedkeys(unindent, "n", false)
+		vim.api.nvim_feedkeys(unindent, "ni", false)
 		return
 	end
 
@@ -116,7 +116,7 @@ function smark_private.callback_normal_o()
 	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
-		vim.api.nvim_feedkeys("o", "n", false)
+		vim.api.nvim_feedkeys("o", "ni", false)
 		return
 	end
 

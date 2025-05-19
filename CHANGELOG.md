@@ -1,5 +1,7 @@
 ## Version 0.2
 
+- [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
+- [ ] Automatically detect ordered/unordered after ending bullet with colon
 - [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
 - [ ] Handle moving cursor to end of line correctly during edits
 - [ ] Handle insertion with "O"

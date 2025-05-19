@@ -134,6 +134,10 @@ end
 ---@param li ListItem
 ---@return integer # The number of spaces required to be registered as nested list item of one given
 function M.get_nested_indent_spaces(li)
+	if li.indent_spaces == -1 then
+		return 0
+	end
+
 	if li.is_ordered then
 		return li.indent_spaces + string.len(tostring(li.index)) + 2
 	else
