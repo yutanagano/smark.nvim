@@ -37,7 +37,9 @@ function smark_private.callback_insert_newline()
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
 	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-
+	for line_num = rel_cursor_coords.row1, #li_array do
+		smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	end
 	smark_private.draw_list_items(li_array, bounds)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -122,6 +124,9 @@ function smark_private.callback_normal_o()
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
 	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+	for line_num = rel_cursor_coords.row1, #li_array do
+		smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	end
 	smark_private.draw_list_items(li_array, bounds)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -198,6 +203,7 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 
 	if rel_cursor_coords.row1 == #li_array and current_li.content == "" then
 		current_li.indent_spaces = -1
+		ispec_array[rel_cursor_coords.row1] = {}
 		rel_cursor_coords.col0 = 0
 		return
 	end
@@ -282,19 +288,7 @@ function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coo
 		local lookbehind_ilevel = #lookbehind_ispec
 
 		if row1 > start_row then
-			for i = 1, current_ilevel do
-				if lookbehind_ispec[i] ~= nil then
-					current_ispec[i] = {
-						indent_spaces = lookbehind_ispec[i].indent_spaces,
-						is_ordered = current_ispec[i].is_ordered,
-					}
-				else
-					current_ispec[i] = {
-						indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
-						is_ordered = current_ispec[i].is_ordered,
-					}
-				end
-			end
+			smark_private.update_indent_specs(li_array, ispec_array, row1)
 		end
 
 		if row1 <= end_row then
@@ -338,8 +332,6 @@ function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coo
 			end
 
 			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-		else
-			current_li.indent_spaces = current_ispec[current_ilevel].indent_spaces
 		end
 	end
 end
@@ -358,28 +350,13 @@ function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_c
 	for row1 = start_row, #li_array do
 		local current_li = li_array[row1]
 		local current_ispec = ispec_array[row1]
-		local lookbehind_li = li_array[row1 - 1]
-		local lookbehind_ispec = ispec_array[row1 - 1]
 
 		if row1 > start_row then
-			for i = 1, #current_ispec do
-				if lookbehind_ispec[i] ~= nil then
-					current_ispec[i] = {
-						indent_spaces = lookbehind_ispec[i].indent_spaces,
-						is_ordered = current_ispec[i].is_ordered,
-					}
-				else
-					current_ispec[i] = {
-						indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li),
-						is_ordered = current_ispec[i].is_ordered,
-					}
-				end
-			end
+			smark_private.update_indent_specs(li_array, ispec_array, row1)
 		end
 
 		if row1 <= end_row or (not subtree_traversed and #current_ispec > original_end_row_ilevel) then
 			local original_preamble_len = list_item.get_preamble_length(current_li)
-
 			table.remove(current_ispec)
 
 			if #current_ispec == 0 then
@@ -407,14 +384,43 @@ function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_c
 					rel_cursor_coords.col0 + list_item.get_preamble_length(current_li) - original_preamble_len
 				)
 			end
+
 			format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 		else
 			if not subtree_traversed then
 				subtree_traversed = true
 			end
-			current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
 		end
 	end
+end
+
+---Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
+---The update is done by revising the indent spec of a particular item based on the one directly preceding it.
+---This is useful if any edits to part of the list block have caused re-numberings and subsequent changes to indentation specs downstream.
+---@param li_array ListItem
+---@param ispec_array indent_spec[]
+---@param line_num 1-indexed position of list item to update indentation for. Must be greater than 1.
+function smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	local current_li = li_array[line_num]
+	local current_ispec = ispec_array[line_num]
+	local current_ilevel = #current_ispec
+
+	if current_ilevel == 0 then
+		return
+	end
+
+	local lookbehind_li = li_array[line_num - 1]
+	local lookbehind_ispec = ispec_array[line_num - 1]
+
+	for i = 1, current_ilevel do
+		if lookbehind_ispec[i] ~= nil then
+			current_ispec[i].indent_spaces = lookbehind_ispec[i].indent_spaces
+		else
+			current_ispec[i].indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
+		end
+	end
+
+	current_li.indent_spaces = current_ispec[current_ilevel].indent_spaces
 end
 
 return smark

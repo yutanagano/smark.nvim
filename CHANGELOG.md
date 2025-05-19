@@ -1,5 +1,6 @@
 ## Version 0.2
 
+- [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
 - [ ] Handle moving cursor to end of line correctly during edits
 - [ ] Handle insertion with "O"
 - [ ] Handle checking task markers
