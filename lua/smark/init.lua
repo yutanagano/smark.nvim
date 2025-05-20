@@ -20,6 +20,8 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("i", "<C-d>", smark_private.callback_insert_unindent, { buffer = true })
 		vim.keymap.set("n", ">>", smark_private.callback_normal_indent, { buffer = true })
 		vim.keymap.set("n", "<<", smark_private.callback_normal_unindent, { buffer = true })
+		vim.keymap.set("n", ">", smark_private.callback_normal_indentop, { expr = true, buffer = true })
+		vim.keymap.set("n", "<", smark_private.callback_normal_unindentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
 	end,
 })
@@ -108,6 +110,44 @@ function smark_private.callback_normal_unindent()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = rel_cursor_coords.row1
 	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
+	smark_private.apply_unindent(li_array, start_row, end_row)
+	smark_private.draw_list_items(li_array, bounds)
+end
+
+function smark_private.callback_normal_indentop()
+	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		return ">"
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark'.indentop"
+	return "g@"
+end
+
+function smark_private.callback_normal_unindentop()
+	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		error("noice")
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark'.unindentop"
+	return "g@"
+end
+
+function smark.indentop()
+	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
+	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
+	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
+	smark_private.apply_indent(li_array, start_row, end_row)
+	smark_private.draw_list_items(li_array, bounds)
+end
+
+function smark.unindentop()
+	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
+	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
+	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
 	smark_private.apply_unindent(li_array, start_row, end_row)
 	smark_private.draw_list_items(li_array, bounds)
 end
