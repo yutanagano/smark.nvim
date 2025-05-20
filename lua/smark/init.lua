@@ -23,6 +23,8 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("n", ">", smark_private.callback_normal_indentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "<", smark_private.callback_normal_unindentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
+		vim.keymap.set("x", ">", smark_private.callback_visual_indent, { expr = true, buffer = true })
+		vim.keymap.set("x", "<", smark_private.callback_visual_unindent, { expr = true, buffer = true })
 	end,
 })
 
@@ -121,7 +123,7 @@ function smark_private.callback_normal_indentop()
 		return ">"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.indentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.normal_indentop"
 	return "g@"
 end
 
@@ -129,14 +131,14 @@ function smark_private.callback_normal_unindentop()
 	local _, bounds, _ = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
-		error("noice")
+		return "<"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.unindentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.normal_unindentop"
 	return "g@"
 end
 
-function smark.indentop()
+function smark.normal_indentop()
 	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
 	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
@@ -144,7 +146,7 @@ function smark.indentop()
 	smark_private.draw_list_items(li_array, bounds)
 end
 
-function smark.unindentop()
+function smark.normal_unindentop()
 	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
 	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
@@ -172,6 +174,50 @@ function smark_private.callback_normal_o()
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 	vim.cmd("startinsert!")
+end
+
+function smark_private.callback_visual_indent()
+	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local highlight_bound_row = vim.fn.getpos("v")[2]
+
+	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
+		return ">"
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_indentop"
+	return "g@"
+end
+
+function smark_private.callback_visual_unindent()
+	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local highlight_bound_row = vim.fn.getpos("v")[2]
+
+	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
+		return "<"
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_unindentop"
+	return "g@"
+end
+
+function smark.visual_indentop()
+	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
+	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
+	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
+	for _ = 1, vim.v.count1 do
+		smark_private.apply_indent(li_array, start_row, end_row)
+	end
+	smark_private.draw_list_items(li_array, bounds)
+end
+
+function smark.visual_unindentop()
+	local _, bounds, li_array = smark_private.get_list_block_around_cursor()
+	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
+	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
+	for _ = 1, vim.v.count1 do
+		smark_private.apply_unindent(li_array, start_row, end_row)
+	end
+	smark_private.draw_list_items(li_array, bounds)
 end
 
 ---@return CursorCoords
