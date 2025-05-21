@@ -2,6 +2,7 @@
 
 - [x] Update only lines whose content change
 - [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
+- [ ] Handle over-un-indentation (in visual mode you can unindent an arbitrary number of times)
 - [ ] Study and handle hyperindented lists (root item already starts with positive indent spaces)
 - [ ] Automatically detect ordered/unordered after ending bullet with colon
 - [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
