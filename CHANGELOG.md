@@ -1,6 +1,6 @@
 ## Version 0.2
 
-- [ ] Update only lines whose content change
+- [x] Update only lines whose content change
 - [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
 - [ ] Study and handle hyperindented lists (root item already starts with positive indent spaces)
 - [ ] Automatically detect ordered/unordered after ending bullet with colon
