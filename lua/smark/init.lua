@@ -29,7 +29,7 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 function smark_private.callback_insert_newline()
-	local cursor_coords, bounds, li_array = smark_private.get_list_block_around_cursor()
+	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
@@ -44,7 +44,7 @@ function smark_private.callback_insert_newline()
 	for line_num = rel_cursor_coords.row1, #li_array do
 		smark_private.update_indent_specs(li_array, ispec_array, line_num)
 	end
-	smark_private.draw_list_items(li_array, bounds)
+	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
@@ -223,32 +223,38 @@ end
 ---@return CursorCoords
 ---@return TextBlockBounds|nil # Boundaries of containing list block, nil if cursor not in list block
 ---@return ListItem[] # Array of list items detected inside the list block
+---@return string[] # Array of strings representing the original block content, line by line
 function smark_private.get_list_block_around_cursor()
 	local cursor_row1, cursor_col0 = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row1 = cursor_row1, col0 = cursor_col0 }
+	local text = vim.api.nvim_buf_get_lines(0, cursor_row1 - 1, cursor_row1, true)[1]
 
-	local li = list_item.from_line(cursor_row1)
+	local li = list_item.from_string(text)
 
 	if li == nil then
-		return cursor_coords, nil, {}
+		return cursor_coords, nil, {}, {}
 	end
 
 	local bounds = { upper = cursor_row1, lower = cursor_row1 }
 	local upper_bound_found, lower_bound_found = false, false
 	local li_array = {}
+	local text_array = {}
 
 	table.insert(li_array, li)
+	table.insert(text_array, text)
 
 	while not upper_bound_found do
 		if bounds.upper == 1 then
 			upper_bound_found = true
 		else
-			li = list_item.from_line(bounds.upper - 1)
+			text = vim.api.nvim_buf_get_lines(0, bounds.upper - 1, bounds.upper, true)[1]
+			li = list_item.from_string(text)
 			if li == nil then
 				upper_bound_found = true
 			else
 				bounds.upper = bounds.upper - 1
 				table.insert(li_array, 1, li)
+				table.insert(text_array, 1, text)
 			end
 		end
 	end
@@ -257,17 +263,19 @@ function smark_private.get_list_block_around_cursor()
 		if bounds.lower == vim.api.nvim_buf_line_count(0) then
 			lower_bound_found = true
 		else
-			li = list_item.from_line(bounds.lower + 1)
+			text = vim.api.nvim_buf_get_lines(0, bounds.lower - 1, bounds.lower, true)[1]
+			li = list_item.from_string(text)
 			if li == nil then
 				lower_bound_found = true
 			else
 				bounds.lower = bounds.lower + 1
 				table.insert(li_array, li)
+				table.insert(text_array, text)
 			end
 		end
 	end
 
-	return cursor_coords, bounds, li_array
+	return cursor_coords, bounds, li_array, text_array
 end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> in insert mode at the specified relative cursor coordinates.
@@ -348,13 +356,37 @@ end
 
 ---Draw out string representations of list items in li_array between the lines specified by bounds.
 ---@param li_array ListItem[]
+---@param original_text string[] Array containing original text contents of list block
 ---@param bounds TextBlockBounds
-function smark_private.draw_list_items(li_array, bounds)
-	local lis_as_strings = {}
-	for i, li in ipairs(li_array) do
-		lis_as_strings[i] = list_item.to_string(li)
+---@param rel_cursor_coords CursorCoords Cursor coordinates relative to bounds of list block
+function smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	if #li_array == #original_text then
+		for i, li in ipairs(li_array) do
+			local new_text = list_item.to_string(li)
+			local absolute_ln = bounds.upper + i - 1
+			if original_text[i] ~= new_text then
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
+			end
+		end
+		return
 	end
-	vim.api.nvim_buf_set_lines(0, bounds.upper - 1, bounds.lower, true, lis_as_strings)
+
+	for i, li in ipairs(li_array) do
+		local new_text = list_item.to_string(li)
+		local absolute_ln = bounds.upper + i - 1
+
+		if i < rel_cursor_coords.row1 then
+			if original_text[i] ~= new_text then
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
+			end
+		elseif i == rel_cursor_coords.row1 then
+			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { new_text })
+		else
+			if original_text[i - 1] ~= new_text then
+				vim.api.nvim_buf_set_lines(0, absolute_ln, absolute_ln + 1, true, { new_text })
+			end
+		end
+	end
 end
 
 ---Modifies li_array and optionally rel_cursor_coords in place to reflect indenting.

@@ -1,11 +1,11 @@
 ## Version 0.2
 
+- [ ] Update only lines whose content change
 - [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
 - [ ] Study and handle hyperindented lists (root item already starts with positive indent spaces)
 - [ ] Automatically detect ordered/unordered after ending bullet with colon
 - [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
 - [ ] Handle moving cursor to end of line correctly during edits
-- [ ] Update only lines whose content change
 - [ ] Handle insertion with "O"
 - [ ] Handle checking task markers
 - [ ] Handle multi-line bullets
