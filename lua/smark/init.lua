@@ -387,7 +387,7 @@ function smark_private.draw_list_items(li_array, original_text, bounds, rel_curs
 			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { new_text })
 		else
 			if original_text[i - 1] ~= new_text then
-				vim.api.nvim_buf_set_lines(0, absolute_ln, absolute_ln + 1, true, { new_text })
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
 			end
 		end
 	end

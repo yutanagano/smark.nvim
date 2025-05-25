@@ -1,7 +1,7 @@
 ## Version 0.2
 
 - [x] Update only lines whose content change
-- [ ] Fix bug of new incremental update system where line updates are out of sync if starting text is non-standard
+- [x] Fix bug of new incremental update system where line updates are out of sync if starting text is non-standard
 - [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
 - [ ] Handle over-un-indentation (in visual mode you can unindent an arbitrary number of times)
 - [ ] Study and handle hyperindented lists (root item already starts with positive indent spaces)
