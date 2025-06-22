@@ -60,7 +60,8 @@ function smark_private.callback_insert_indent()
 	end
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	smark_private.apply_indent(li_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_indent(li_array, ispec_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -77,7 +78,14 @@ function smark_private.callback_insert_unindent()
 	end
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	smark_private.apply_unindent(li_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_unindent(
+		li_array,
+		ispec_array,
+		rel_cursor_coords.row1,
+		rel_cursor_coords.row1,
+		rel_cursor_coords
+	)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -96,7 +104,8 @@ function smark_private.callback_normal_indent()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = rel_cursor_coords.row1
 	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
-	smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coords)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_indent(li_array, ispec_array, start_row, end_row)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
@@ -112,7 +121,8 @@ function smark_private.callback_normal_unindent()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = rel_cursor_coords.row1
 	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
-	smark_private.apply_unindent(li_array, start_row, end_row)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_unindent(li_array, ispec_array, start_row, end_row)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
@@ -143,7 +153,8 @@ function smark.normal_indentop()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
-	smark_private.apply_indent(li_array, start_row, end_row)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_indent(li_array, ispec_array, start_row, end_row)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
@@ -152,7 +163,8 @@ function smark.normal_unindentop()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
-	smark_private.apply_unindent(li_array, start_row, end_row)
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	smark_private.apply_unindent(li_array, ispec_array, start_row, end_row)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
@@ -207,8 +219,9 @@ function smark.visual_indentop()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	for _ = 1, vim.v.count1 do
-		smark_private.apply_indent(li_array, start_row, end_row)
+		smark_private.apply_indent(li_array, ispec_array, start_row, end_row)
 	end
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
@@ -218,8 +231,9 @@ function smark.visual_unindentop()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	for _ = 1, vim.v.count1 do
-		smark_private.apply_unindent(li_array, start_row, end_row)
+		smark_private.apply_unindent(li_array, ispec_array, start_row, end_row)
 	end
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
@@ -394,14 +408,14 @@ function smark_private.draw_list_items(li_array, original_text, bounds, rel_curs
 	end
 end
 
----Modifies li_array and optionally rel_cursor_coords in place to reflect indenting.
+---Edit li_array, ispec_array and rel_cursor_coords in place to reflect indenting one level the rows from start_row to end_row inclusive.
+---Only call this function after first fixing format.
 ---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords? CursorCoords
-function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coords)
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-
+function smark_private.apply_indent(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
 	for row1 = start_row, #li_array do
 		local current_li = li_array[row1]
 		local current_ispec = ispec_array[row1]
@@ -460,15 +474,15 @@ function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coo
 	end
 end
 
----Modifies li_array and optionally rel_cursor_coords in place to reflect changes.
+---Edit li_array, ispec_array and rel_cursor_coords in place to reflect unindenting one level the rows from start_row to end_row inclusive.
+---Only call this function after first fixing format.
 ---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords? CursorCoords
-function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_coords)
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
+function smark_private.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
 	local original_end_row_ilevel = #ispec_array[end_row]
-
 	local subtree_traversed = false
 
 	for row1 = start_row, #li_array do
