@@ -5,9 +5,10 @@
 - [x] Fix numbering bug when indenting mixed ordered and unordered lists
 - [x] Handle over-outdentation (in visual mode you can outdent an arbitrary number of times)
 - [x] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
-- [ ] Automatically detect ordered/unordered after ending bullet with colon
+- [x] Automatically detect ordered/unordered after ending bullet with colon
+- [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
+- [ ] Move all functions except setup to private module
 - [ ] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
-- [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
 - [ ] Handle moving cursor to end of line correctly during edits
 - [ ] Handle insertion with "O"
 - [ ] Handle checking task markers

@@ -175,10 +175,6 @@ function smark_private.callback_normal_o()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-	for line_num = rel_cursor_coords.row1, #li_array do
-		smark_private.update_indent_specs(li_array, ispec_array, line_num)
-	end
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -333,21 +329,26 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 	local new_li = list_item.get_empty_like(current_li)
 	local new_ispec = format.get_indent_spec_like(current_ispec)
 	new_li.content = content_after_cursor
-	if string.sub(current_li.content, -1) == ":" and content_after_cursor == "" then
-		local new_ispaces = list_item.get_nested_indent_spaces(current_li)
-		new_li.indent_spaces = new_ispaces
-		new_li.is_ordered = false
-		table.insert(new_ispec, { indent_spaces = new_ispaces, is_ordered = new_li.is_ordered })
-	end
+
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
 	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
 
-	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 	for line_num = rel_cursor_coords.row1, #li_array do
 		smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	end
+
+	if string.sub(current_li.content, -1) == ":" and content_after_cursor == "" then
+		smark_private.apply_indent(
+			li_array,
+			ispec_array,
+			rel_cursor_coords.row1,
+			rel_cursor_coords.row1,
+			rel_cursor_coords
+		)
 	end
 end
 
@@ -371,17 +372,27 @@ function smark_private.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
 
 	local new_li = list_item.get_empty_like(current_li)
 	local new_ispec = format.get_indent_spec_like(current_ispec)
-	if string.sub(current_li.content, -1) == ":" then
-		local new_ispaces = list_item.get_nested_indent_spaces(current_li)
-		new_li.indent_spaces = new_ispaces
-		new_li.is_ordered = false
-		table.insert(new_ispec, { indent_spaces = new_ispaces, is_ordered = new_li.is_ordered })
-	end
+
 	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
 	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
 
 	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
+
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+	for line_num = rel_cursor_coords.row1, #li_array do
+		smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	end
+
+	if string.sub(current_li.content, -1) == ":" then
+		smark_private.apply_indent(
+			li_array,
+			ispec_array,
+			rel_cursor_coords.row1,
+			rel_cursor_coords.row1,
+			rel_cursor_coords
+		)
+	end
 end
 
 ---Draw out string representations of list items in li_array between the lines specified by bounds.
