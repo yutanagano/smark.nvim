@@ -439,6 +439,7 @@ function smark_private.apply_indent(li_array, start_row, end_row, rel_cursor_coo
 				}
 			end
 
+			current_ispec[current_ilevel].is_ordered = lookbehind_ispec[current_ilevel].is_ordered
 			table.insert(current_ispec, new_ilevelspec)
 
 			current_li.indent_spaces = new_ilevelspec.indent_spaces
@@ -519,7 +520,7 @@ end
 ---Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
 ---The update is done by revising the indent spec of a particular item based on the one directly preceding it.
 ---This is useful if any edits to part of the list block have caused re-numberings and subsequent changes to indentation specs downstream.
----@param li_array ListItem
+---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param line_num 1-indexed position of list item to update indentation for. Must be greater than 1.
 function smark_private.update_indent_specs(li_array, ispec_array, line_num)

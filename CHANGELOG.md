@@ -2,7 +2,7 @@
 
 - [x] Update only lines whose content change
 - [x] Fix bug of new incremental update system where line updates are out of sync if starting text is non-standard
-- [ ] Change fix logic so that if indent is valid pre-renumbering then they are understood as such when fixing
+- [x] Fix numbering bug when indenting mixed ordered and unordered lists
 - [ ] Handle over-un-indentation (in visual mode you can unindent an arbitrary number of times)
 - [ ] Study and handle hyperindented lists (root item already starts with positive indent spaces)
 - [ ] Automatically detect ordered/unordered after ending bullet with colon
