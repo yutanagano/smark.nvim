@@ -40,10 +40,6 @@ function smark_private.callback_insert_newline()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-	for line_num = rel_cursor_coords.row1, #li_array do
-		smark_private.update_indent_specs(li_array, ispec_array, line_num)
-	end
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
@@ -297,6 +293,7 @@ function smark_private.get_list_block_around_cursor()
 end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> in insert mode at the specified relative cursor coordinates.
+---Only call this function after fixing format.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
@@ -305,19 +302,28 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 	local current_ispec = ispec_array[rel_cursor_coords.row1]
 
 	if rel_cursor_coords.col0 < current_li.read_time_preamble_length then
+		-- TODO: clean this part, logic can probably be merged with main block below
 		local new_li = list_item.get_empty_like(current_li)
 		local new_ispec = format.get_indent_spec_like(current_ispec)
 		table.insert(li_array, rel_cursor_coords.row1, new_li)
 		table.insert(ispec_array, rel_cursor_coords.row1, new_ispec)
 		rel_cursor_coords.col0 = list_item.get_preamble_length(current_li)
 		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
+		format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+		for line_num = rel_cursor_coords.row1, #li_array do
+			smark_private.update_indent_specs(li_array, ispec_array, line_num)
+		end
 		return
 	end
 
 	if rel_cursor_coords.row1 == #li_array and current_li.content == "" then
-		current_li.indent_spaces = -1
-		ispec_array[rel_cursor_coords.row1] = {}
-		rel_cursor_coords.col0 = 0
+		smark_private.apply_unindent(
+			li_array,
+			ispec_array,
+			rel_cursor_coords.row1,
+			rel_cursor_coords.row1,
+			rel_cursor_coords
+		)
 		return
 	end
 
@@ -338,6 +344,11 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 
 	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
+	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+
+	for line_num = rel_cursor_coords.row1, #li_array do
+		smark_private.update_indent_specs(li_array, ispec_array, line_num)
+	end
 end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of "o" in normal mode at the specified relative cursor coordinates.

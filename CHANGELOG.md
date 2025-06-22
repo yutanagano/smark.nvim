@@ -4,9 +4,9 @@
 - [x] Fix bug of new incremental update system where line updates are out of sync if starting text is non-standard
 - [x] Fix numbering bug when indenting mixed ordered and unordered lists
 - [x] Handle over-outdentation (in visual mode you can outdent an arbitrary number of times)
-- [ ] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
-- [ ] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
+- [x] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
 - [ ] Automatically detect ordered/unordered after ending bullet with colon
+- [ ] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
 - [ ] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
 - [ ] Handle moving cursor to end of line correctly during edits
 - [ ] Handle insertion with "O"
