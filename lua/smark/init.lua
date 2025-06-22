@@ -295,6 +295,7 @@ function smark_private.apply_insert_newline(li_array, ispec_array, rel_cursor_co
 		local new_ispec = format.get_indent_spec_like(current_ispec)
 		table.insert(li_array, rel_cursor_coords.row1, new_li)
 		table.insert(ispec_array, rel_cursor_coords.row1, new_ispec)
+		rel_cursor_coords.col0 = list_item.get_preamble_length(current_li)
 		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 		return
 	end
