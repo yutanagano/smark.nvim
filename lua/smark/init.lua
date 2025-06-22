@@ -474,6 +474,10 @@ function smark_private.apply_unindent(li_array, start_row, end_row, rel_cursor_c
 		local current_li = li_array[row1]
 		local current_ispec = ispec_array[row1]
 
+		if #current_ispec == 0 then
+			return
+		end
+
 		if row1 > start_row then
 			smark_private.update_indent_specs(li_array, ispec_array, row1)
 		end

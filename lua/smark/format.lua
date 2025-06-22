@@ -31,6 +31,10 @@ function M.fix(li_array, rel_cursor_coords)
 			ispec_array[1] = { { is_ordered = li.is_ordered, indent_spaces = li.indent_spaces } }
 			index_counter[1] = 2
 			prev_original_indent_spaces = li.indent_spaces
+		elseif li.indent_spaces == -1 then
+			ispec_array[i] = {}
+			index_counter[1] = 1
+			prev_original_indent_spaces = nil
 		else
 			local prev_ispec = ispec_array[i - 1]
 			local prev_ilevel = #prev_ispec
