@@ -83,6 +83,7 @@ end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect indenting one level the rows from start_row to end_row inclusive.
 ---Only call this function after first fixing format.
+---Special case: Any indent applications from the root (first row) of an indent block will cause the entire block to indent.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param start_row integer 1-indexed number of first line to unindent
@@ -162,12 +163,39 @@ end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect unindenting one level the rows from start_row to end_row inclusive.
 ---Only call this function after first fixing format.
+---Special case: if the root list item is already indented (there are a positive number of spaces preceding the first bullet), and the selection to unindent contains a bullet at the root level, then the whole list block is unindented.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords? CursorCoords
 function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+	local root_indent_level = li_array[1].indent_spaces
+
+	if root_indent_level > 0 then
+		local min_ilevel_in_selection
+		for row1 = start_row, end_row do
+			local current_ilevel = li_array[row1].indent_spaces
+			if min_ilevel_in_selection == nil or current_ilevel < min_ilevel_in_selection then
+				min_ilevel_in_selection = current_ilevel
+			end
+		end
+
+		if min_ilevel_in_selection == root_indent_level then
+			local deindent_amount = math.min(2, root_indent_level)
+			for row1 = 1, #li_array do
+				local current_li = li_array[row1]
+				current_li.indent_spaces = current_li.indent_spaces - deindent_amount
+
+				local current_ispec = ispec_array[row1]
+				for _, ilspec in ipairs(current_ispec) do
+					ilspec.indent_spaces = ilspec.indent_spaces - deindent_amount
+				end
+			end
+			return
+		end
+	end
+
 	local original_end_row_ilevel = #ispec_array[end_row]
 	local subtree_traversed = false
 
@@ -188,15 +216,11 @@ function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_
 			table.remove(current_ispec)
 
 			if #current_ispec == 0 then
-				if current_li.indent_spaces == 0 then
-					current_li.indent_spaces = -1
-				else
-					current_ispec[1] = {
-						indent_spaces = math.max(0, current_li.indent_spaces - 2),
-						is_ordered = current_li.is_ordered,
-					}
-					current_li.indent_spaces = current_ispec[1].indent_spaces
-				end
+				assert(
+					current_li.indent_spaces == 0,
+					"The case of hyperindented list blocks should be handled in the special case block at the beginning"
+				)
+				current_li.indent_spaces = -1
 			else
 				current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
 				current_li.is_ordered = current_ispec[#current_ispec].is_ordered

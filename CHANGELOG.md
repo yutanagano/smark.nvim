@@ -1,3 +1,9 @@
+## Version 0.3
+
+- [ ] Handle multi-line bullets
+- [ ] Handle checking task markers
+- [ ] Handle insertion with "O"
+
 ## Version 0.2
 
 - [x] Update only lines whose content change
@@ -7,11 +13,8 @@
 - [x] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
 - [x] Automatically detect ordered/unordered after ending bullet with colon
 - [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
-- [ ] Bind format fixing routine by itself to a keymap
-- [ ] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
-- [ ] Handle multi-line bullets
-- [ ] Handle insertion with "O"
-- [ ] Handle checking task markers
+- [x] Bind format fixing routine by itself to a keymap
+- [x] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
 
 ## Version 0.1
 
