@@ -141,6 +141,35 @@ function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 	end
 end
 
+---Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
+---The update is done by revising the indent spec of a particular item based on the one directly preceding it.
+---This is useful if any edits to part of the list block have caused re-numberings and subsequent changes to indentation specs downstream.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param line_num 1-indexed position of list item to update indentation for. Must be greater than 1.
+function M.update_indent_specs(li_array, ispec_array, line_num)
+	local current_li = li_array[line_num]
+	local current_ispec = ispec_array[line_num]
+	local current_ilevel = #current_ispec
+
+	if current_ilevel == 0 then
+		return
+	end
+
+	local lookbehind_li = li_array[line_num - 1]
+	local lookbehind_ispec = ispec_array[line_num - 1]
+
+	for i = 1, current_ilevel do
+		if lookbehind_ispec[i] ~= nil then
+			current_ispec[i].indent_spaces = lookbehind_ispec[i].indent_spaces
+		else
+			current_ispec[i].indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
+		end
+	end
+
+	current_li.indent_spaces = current_ispec[current_ilevel].indent_spaces
+end
+
 ---@param ispec indent_spec
 ---@return indent_spec
 function M.get_indent_spec_like(ispec)

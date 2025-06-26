@@ -186,28 +186,27 @@ function M.get_empty_like(li)
 	}
 end
 
----Only call this function if the cursor position is inside of the list item's content.
+---Return the content string that lies to the right of the cursor.
 ---@param li ListItem
 ---@param cursor_col integer 0-indexed cursor column position
 ---@return string
 function M.get_content_after_cursor(li, cursor_col)
-	assert(
-		cursor_col >= li.read_time_preamble_length,
-		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
-	)
+	if cursor_col <= li.read_time_preamble_length then
+		return li.content
+	end
 
 	local relative_col_index = cursor_col - li.read_time_preamble_length + 1
 	return string.sub(li.content, relative_col_index)
 end
 
----Only call this function if the cursor position is inside of the list item's content.
+---Modify a list item's content string, truncating any content to the right of the cursor.
 ---@param li ListItem
 ---@param cursor_col integer 0-indexed cursor column position
 function M.truncate_content_at_cursor(li, cursor_col)
-	assert(
-		cursor_col >= li.read_time_preamble_length,
-		string.format("Cursor column at %d lies outside of list item content range", cursor_col)
-	)
+	if cursor_col <= li.read_time_preamble_length then
+		li.content = ""
+		return
+	end
 
 	local relative_cutoff = cursor_col - li.read_time_preamble_length
 	li.content = string.sub(li.content, 1, relative_cutoff)
