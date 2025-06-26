@@ -7,10 +7,8 @@
 - [x] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
 - [x] Automatically detect ordered/unordered after ending bullet with colon
 - [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
-- [ ] Move all functions except setup to private module
 - [ ] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
 - [ ] Handle multi-line bullets
-- [ ] Handle moving cursor to end of line correctly during edits
 - [ ] Handle insertion with "O"
 - [ ] Handle checking task markers
 
