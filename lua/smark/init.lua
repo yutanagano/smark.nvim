@@ -26,6 +26,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
 		vim.keymap.set("x", ">", smark_private.callback_visual_indent, { expr = true, buffer = true })
 		vim.keymap.set("x", "<", smark_private.callback_visual_unindent, { expr = true, buffer = true })
+		vim.keymap.set("n", "<leader>lf", smark_private.callback_format_list, { buffer = true })
 	end,
 })
 
@@ -235,6 +236,21 @@ function smark.visual_unindentop()
 		list_manipulation.apply_unindent(li_array, ispec_array, start_row, end_row)
 	end
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+end
+
+function smark_private.callback_format_list()
+	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	format.fix(li_array, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+
+	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
 ---@return CursorCoords
