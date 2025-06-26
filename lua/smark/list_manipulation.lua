@@ -89,6 +89,19 @@ end
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords? CursorCoords
 function M.apply_indent(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+	if start_row == 1 then
+		for row1 = 1, #li_array do
+			local current_li = li_array[row1]
+			current_li.indent_spaces = current_li.indent_spaces + 2
+
+			local current_ispec = ispec_array[row1]
+			for _, ilspec in ipairs(current_ispec) do
+				ilspec.indent_spaces = ilspec.indent_spaces + 2
+			end
+		end
+		return
+	end
+
 	for row1 = start_row, #li_array do
 		local current_li = li_array[row1]
 		local current_ispec = ispec_array[row1]
