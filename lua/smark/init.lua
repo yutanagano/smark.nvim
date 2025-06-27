@@ -24,9 +24,10 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("n", ">", smark_private.callback_normal_indentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "<", smark_private.callback_normal_unindentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
+		vim.keymap.set("n", "<leader>ll", smark_private.callback_format_list, { buffer = true })
+		vim.keymap.set("n", "<leader>lo", smark_private.callback_toggle_ordered_type, { buffer = true })
 		vim.keymap.set("x", ">", smark_private.callback_visual_indent, { expr = true, buffer = true })
 		vim.keymap.set("x", "<", smark_private.callback_visual_unindent, { expr = true, buffer = true })
-		vim.keymap.set("n", "<leader>lf", smark_private.callback_format_list, { buffer = true })
 	end,
 })
 
@@ -248,9 +249,19 @@ function smark_private.callback_format_list()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	format.fix(li_array, rel_cursor_coords)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+end
 
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+function smark_private.callback_toggle_ordered_type()
+	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+
+	if bounds == nil then
+		return
+	end
+
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	list_manipulation.toggle_ordered_type_normal(li_array, ispec_array, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
 ---@return CursorCoords

@@ -83,6 +83,7 @@ end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect indenting one level the rows from start_row to end_row inclusive.
 ---Only call this function after first fixing format.
+---Ensure that start_row and end_row are within bounds of the list block, otherwise this can cause undefined behaviour.
 ---Special case: Any indent applications from the root (first row) of an indent block will cause the entire block to indent.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
@@ -163,6 +164,7 @@ end
 
 ---Edit li_array, ispec_array and rel_cursor_coords in place to reflect unindenting one level the rows from start_row to end_row inclusive.
 ---Only call this function after first fixing format.
+---Ensure that start_row and end_row are within bounds of the list block, otherwise this can cause undefined behaviour.
 ---Special case: if the root list item is already indented (there are a positive number of spaces preceding the first bullet), and the selection to unindent contains a bullet at the root level, then the whole list block is unindented.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
@@ -243,6 +245,59 @@ function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_
 				subtree_traversed = true
 			end
 		end
+	end
+end
+
+---For a given region within a list block, toggle whether the list element type is ordered or unordered.
+---This edits li_array and ispec_array in place to reflect the changes.
+---The ordered type is toggled for the list element which the cursor is on, as well as all its contiguous siblings (list elements that are at the same indent level, and that are all children of the same parent list element).
+---Only call this function after first fixing format.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param rel_cursor_coords CursorCoords
+function M.toggle_ordered_type_normal(li_array, ispec_array, rel_cursor_coords)
+	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+	local cursor_ilevel = #cursor_ispec
+	local cursor_ordered = cursor_ispec[cursor_ilevel].is_ordered
+
+	local current_row = rel_cursor_coords.row1
+	local upper_bound_reached = false
+	local upper_bound = 1
+	while current_row >= 1 and not upper_bound_reached do
+		local current_ispec = ispec_array[current_row]
+		if #current_ispec < cursor_ilevel then
+			upper_bound_reached = true
+			upper_bound = current_row + 1
+		else
+			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
+			if #current_ispec == cursor_ilevel then
+				li_array[current_row].is_ordered = not cursor_ordered
+			end
+		end
+		current_row = current_row - 1
+	end
+
+	current_row = rel_cursor_coords.row1 + 1
+	local lower_bound_reached = false
+	local lower_bound = #li_array
+	while current_row <= #li_array and not lower_bound_reached do
+		local current_ispec = ispec_array[current_row]
+		if #current_ispec < cursor_ilevel then
+			lower_bound_reached = true
+			lower_bound = current_row - 1
+		else
+			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
+			if #current_ispec == cursor_ilevel then
+				li_array[current_row].is_ordered = not cursor_ordered
+			end
+		end
+		current_row = current_row + 1
+	end
+
+	format.fix_numbering(li_array, ispec_array)
+
+	for row1 = upper_bound + 1, lower_bound do
+		format.update_indent_specs(li_array, ispec_array, row1)
 	end
 end
 
