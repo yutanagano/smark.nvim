@@ -1,10 +1,12 @@
 ## Version 0.3
 
-- [ ] Add method to toggle list ordered types:
+- [x] Add method to toggle list ordered types:
   - [x] For normal mode
+  - [x] For visual mode
+- [ ] Handle checking task markers:
+  - [ ] For normal mode
   - [ ] For visual mode
 - [ ] Handle multi-line bullets
-- [ ] Handle checking task markers
 - [ ] Handle insertion with "O"
 
 ## Version 0.2

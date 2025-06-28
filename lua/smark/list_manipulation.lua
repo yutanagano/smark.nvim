@@ -301,4 +301,44 @@ function M.toggle_ordered_type_normal(li_array, ispec_array, rel_cursor_coords)
 	end
 end
 
+---For a given region within a list block, toggle whether the list element type is ordered or unordered.
+---This edits li_array and ispec_array in place to reflect the changes.
+---The ordered type is toggled for the list elements between start_row and end_row.
+---The type is toggled to the opposite type from that of the list element that is under the cursor.
+---Only call this function after first fixing format.
+---Ensure that start_row and end_row are within bounds.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param start_row integer 1-indexed number of first line to unindent
+---@param end_row integer 1-indexed number of last line to indent
+---@param rel_cursor_coords CursorCoords
+function M.toggle_ordered_type_visual(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+	local cursor_ordered = cursor_ispec[#cursor_ispec].is_ordered
+
+	for current_row = start_row, end_row do
+		li_array[current_row].is_ordered = not cursor_ordered
+		local current_ispec = ispec_array[current_row]
+		local current_ilevel = #current_ispec
+		current_ispec[current_ilevel].is_ordered = not cursor_ordered
+
+		for subtree_row = current_row + 1, #li_array do
+			local subtree_ispec = ispec_array[subtree_row]
+			local subtree_ilevel = #subtree_ispec
+
+			if subtree_ilevel <= current_ilevel then
+				break
+			end
+
+			subtree_ispec[current_ilevel].is_ordered = not cursor_ordered
+		end
+	end
+
+	format.fix_numbering(li_array, ispec_array)
+
+	for row1 = start_row + 1, #li_array do
+		format.update_indent_specs(li_array, ispec_array, row1)
+	end
+end
+
 return M
