@@ -24,17 +24,13 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.keymap.set("n", ">", smark_private.callback_normal_indentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "<", smark_private.callback_normal_unindentop, { expr = true, buffer = true })
 		vim.keymap.set("n", "o", smark_private.callback_normal_o, { buffer = true })
-		vim.keymap.set("n", "<leader>ll", smark_private.callback_format_list, { buffer = true })
-		vim.keymap.set("n", "<leader>lo", smark_private.callback_normal_toggle_ordered_type, { buffer = true })
+		vim.keymap.set("n", "<leader>ll", smark_private.callback_normal_format, { buffer = true })
+		vim.keymap.set("n", "<leader>lo", smark_private.callback_normal_toggle_ordered, { buffer = true })
 		vim.keymap.set("n", "<leader>lx", smark_private.callback_normal_checkbox, { buffer = true })
 		vim.keymap.set("x", ">", smark_private.callback_visual_indent, { expr = true, buffer = true })
 		vim.keymap.set("x", "<", smark_private.callback_visual_unindent, { expr = true, buffer = true })
-		vim.keymap.set(
-			"x",
-			"<leader>lo",
-			smark_private.callback_visual_toggle_ordered_type,
-			{ expr = true, buffer = true }
-		)
+		vim.keymap.set("x", "<leader>lo", smark_private.callback_visual_toggle_ordered, { expr = true, buffer = true })
+		vim.keymap.set("x", "<leader>lx", smark_private.callback_visual_checkbox, { expr = true, buffer = true })
 	end,
 })
 
@@ -198,7 +194,7 @@ function smark_private.callback_normal_o()
 	vim.cmd("startinsert!")
 end
 
-function smark_private.callback_format_list()
+function smark_private.callback_normal_format()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
@@ -210,7 +206,7 @@ function smark_private.callback_format_list()
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
-function smark_private.callback_normal_toggle_ordered_type()
+function smark_private.callback_normal_toggle_ordered()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
@@ -244,7 +240,7 @@ function smark_private.callback_visual_indent()
 		return ">"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.visual_indentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_indent_op"
 	return "g@"
 end
 
@@ -256,11 +252,11 @@ function smark_private.callback_visual_unindent()
 		return "<"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.visual_unindentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_unindent_op"
 	return "g@"
 end
 
-function smark_private.callback_visual_toggle_ordered_type()
+function smark_private.callback_visual_toggle_ordered()
 	local _, bounds, _ = smark_private.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
@@ -268,11 +264,23 @@ function smark_private.callback_visual_toggle_ordered_type()
 		return
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.visual_toggle_ordered_type_op"
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_toggle_ordered_op"
 	return "g@"
 end
 
-function smark.visual_indentop()
+function smark_private.callback_visual_checkbox()
+	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local highlight_bound_row = vim.fn.getpos("v")[2]
+
+	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
+		return
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark'.visual_toggle_checkbox_op"
+	return "g@"
+end
+
+function smark.visual_indent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
@@ -284,7 +292,7 @@ function smark.visual_indentop()
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
-function smark.visual_unindentop()
+function smark.visual_unindent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
@@ -296,13 +304,23 @@ function smark.visual_unindentop()
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 
-function smark.visual_toggle_ordered_type_op()
+function smark.visual_toggle_ordered_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
 	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
 	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
 	local ispec_array = format.fix(li_array, rel_cursor_coords)
 	list_manipulation.toggle_visual_ordered_type(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+end
+
+function smark.visual_toggle_checkbox_op()
+	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
+	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
+	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
+	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	list_manipulation.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 end
 

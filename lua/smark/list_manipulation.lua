@@ -375,4 +375,32 @@ function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
 	end
 end
 
+---For a given region within a list block containing task list elements, toggle whether they are marked as completed.
+---This edits li_array and ispec_array in place to reflect the changes.
+---The ordered type is toggled for the list elements between start_row and end_row.
+---For any list elements in the range that are not of a checkbox type, this results in a no-op.
+---The completion status is toggled to the opposite type from that of the list element that is under the cursor.
+---Only call this function after first fixing format.
+---Ensure that start_row and end_row are within bounds.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param start_row integer 1-indexed number of first line to unindent
+---@param end_row integer 1-indexed number of last line to indent
+---@param rel_cursor_coords CursorCoords
+function M.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+	local cursor_li = li_array[rel_cursor_coords.row1]
+
+	local toggle_to = true
+	if cursor_li.is_task then
+		toggle_to = not cursor_li.is_completed
+	end
+
+	for current_row = start_row, end_row do
+		local current_li = li_array[current_row]
+		if current_li.is_task then
+			current_li.is_completed = toggle_to
+		end
+	end
+end
+
 return M

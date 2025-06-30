@@ -3,9 +3,10 @@
 - [x] Add method to toggle list ordered types:
   - [x] For normal mode
   - [x] For visual mode
-- [ ] Handle checking task markers:
-  - [x] For normal mode
-  - [ ] For visual mode
+- [x] Handle checking task markers:
+  - [x] For normal mode:
+    - [ ] Make it so that ticking all children automatically ticks the parent
+  - [x] For visual mode
 - [ ] Handle multi-line bullets
 - [ ] Handle insertion with "O"
 
