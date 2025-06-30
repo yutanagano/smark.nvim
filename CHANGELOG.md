@@ -4,7 +4,7 @@
   - [x] For normal mode
   - [x] For visual mode
 - [ ] Handle checking task markers:
-  - [ ] For normal mode
+  - [x] For normal mode
   - [ ] For visual mode
 - [ ] Handle multi-line bullets
 - [ ] Handle insertion with "O"

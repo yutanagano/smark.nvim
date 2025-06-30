@@ -255,7 +255,7 @@ end
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
-function M.toggle_ordered_type_normal(li_array, ispec_array, rel_cursor_coords)
+function M.toggle_normal_ordered_type(li_array, ispec_array, rel_cursor_coords)
 	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
 	local cursor_ilevel = #cursor_ispec
 	local cursor_ordered = cursor_ispec[cursor_ilevel].is_ordered
@@ -312,7 +312,7 @@ end
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords CursorCoords
-function M.toggle_ordered_type_visual(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
+function M.toggle_visual_ordered_type(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
 	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
 	local cursor_ordered = cursor_ispec[#cursor_ispec].is_ordered
 
@@ -338,6 +338,40 @@ function M.toggle_ordered_type_visual(li_array, ispec_array, start_row, end_row,
 
 	for row1 = start_row + 1, #li_array do
 		format.update_indent_specs(li_array, ispec_array, row1)
+	end
+end
+
+---For a given task list element, toggle wether the task is completed or not.
+---This edits li_array and ispec_array in place to reflect the changes.
+---The completion of the task list element that the cursor is on will be toggled.
+---If the current list element also has any children that are also task list elements, they will also all be toggled to the same comletion status as well.
+---Only call this function after first fixing format.
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param rel_cursor_coords CursorCoords
+function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
+	local cursor_li = li_array[rel_cursor_coords.row1]
+	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+	local cursor_ilevel = #cursor_ispec
+
+	if not cursor_li.is_task then
+		return
+	end
+
+	local toggle_to = not cursor_li.is_completed
+	cursor_li.is_completed = toggle_to
+
+	for current_row = rel_cursor_coords.row1 + 1, #li_array do
+		local current_ispec = ispec_array[current_row]
+
+		if #current_ispec <= cursor_ilevel then
+			break
+		end
+
+		local current_li = li_array[current_row]
+		if current_li.is_task then
+			current_li.is_completed = toggle_to
+		end
 	end
 end
 
