@@ -368,10 +368,72 @@ function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
 			break
 		end
 
-		local current_li = li_array[current_row]
-		if current_li.is_task then
-			current_li.is_completed = toggle_to
+		local child_li = li_array[current_row]
+		if child_li.is_task then
+			child_li.is_completed = toggle_to
 		end
+	end
+
+	if cursor_ilevel == 1 then
+		return
+	end
+
+	local parent
+	local siblings_all_completed
+
+	if toggle_to then
+		siblings_all_completed = true
+	else
+		siblings_all_completed = false
+	end
+
+	for current_row = rel_cursor_coords.row1 - 1, 1, -1 do
+		local current_ispec = ispec_array[current_row]
+		local current_li = li_array[current_row]
+
+		if
+			siblings_all_completed
+			and #current_ispec == cursor_ilevel
+			and current_li.is_task
+			and not current_li.is_completed
+		then
+			siblings_all_completed = false
+		end
+
+		if #current_ispec < cursor_ilevel then
+			parent = current_li
+			break
+		end
+	end
+
+	if not siblings_all_completed then
+		parent.is_completed = false
+		return
+	end
+
+	for current_row = rel_cursor_coords.row1 + 1, #li_array do
+		local current_ispec = ispec_array[current_row]
+		local current_li = li_array[current_row]
+
+		if
+			siblings_all_completed
+			and #current_ispec == cursor_ilevel
+			and current_li.is_task
+			and not current_li.is_completed
+		then
+			siblings_all_completed = false
+			break
+		end
+
+		if #current_ispec < cursor_ilevel then
+			break
+		end
+	end
+
+	if siblings_all_completed then
+		parent.is_completed = true
+	else
+		parent.is_completed = false
 	end
 end
 

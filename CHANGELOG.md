@@ -5,7 +5,7 @@
   - [x] For visual mode
 - [x] Handle checking task markers:
   - [x] For normal mode:
-    - [ ] Make it so that ticking all children automatically ticks the parent
+    - [x] Make it so that ticking all children automatically ticks the parent
   - [x] For visual mode
 - [ ] Handle multi-line bullets
 - [ ] Handle insertion with "O"
