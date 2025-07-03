@@ -1,7 +1,3 @@
----@class TextBlockBounds
----@field upper integer 1-indexed upper bound line number
----@field lower integer 1-indexed lower bound line number
-
 local list_item = require("smark.list_item")
 local format = require("smark.format")
 local list_manipulation = require("smark.list_manipulation")
@@ -332,6 +328,10 @@ function smark_private.get_list_block_around_cursor()
 	local cursor_row1, cursor_col0 = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row1 = cursor_row1, col0 = cursor_col0 }
 	local text = vim.api.nvim_buf_get_lines(0, cursor_row1 - 1, cursor_row1, true)[1]
+
+	local li, bounds = list_item.scan_text_around_line(cursor_coords.row1)
+
+	--- Below is old code
 
 	local li = list_item.from_string(text)
 

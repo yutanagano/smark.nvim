@@ -1,109 +1,133 @@
 ---@class ListItem
+---@field spec ListSpec List item characteristics necessary to properly render it.
+---@field content string[] The text content of the list item.
+
+---@class ListSpec
 ---@field is_ordered boolean True if ordered list element.
 ---@field is_task boolean True if task list element.
 ---@field is_completed boolean True if task which is marked completed.
 ---@field index integer The item index number.
 ---@field indent_spaces integer The indentation level of the line in number of spaces. -1 results in a line with no list marker element.
----@field content string The text content of the list item.
----@field read_time_preamble_length integer The original number of characters before the content begins (at read time). Undefined for newly generated list items.
+
+---@class TextBlockBounds
+---@field upper integer 1-indexed upper bound line number
+---@field lower integer 1-indexed lower bound line number
 
 local M = {}
 
----@param line_num integer 1-indexed line number to parse
----@return ListItem|nil # Nil if line does not contain list item
-function M.from_line(line_num)
-	local line_text = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
-	return M.from_string(line_text)
-end
+---Scan current buffer text around the given line number, and if this text is part of a list item, parse the list item and return, along with bounds.
+---@param line_num integer 1-indexed line number to scan from
+---@return ListItem|nil # Nil if line is not inside list item
+---@return TextBlockBounds # Bounds containing list item
+---@return integer # The original number of characters before the content begins at the current line
+function M.scan_text_around_line(line_num)
+	local li = { spec = nil, content = {} }
+	local bounds = { upper = line_num, lower = line_num }
+	local buf_line_count = vim.api.nvim_buf_line_count(0)
+	local content, preamble_len, li_spec = M.pattern_match_line(line_num)
 
----@param line_text string Text of line to parse
----@return ListItem|nil # Nil if line does not contain list item
-function M.from_string(line_text)
-	local li = M.parse_ordered_list_item_text(line_text)
-	if li ~= nil then
-		return li
+	if content == "" then
+		return nil, bounds, preamble_len
 	end
 
-	li = M.parse_unordered_list_item_text(line_text)
-	if li ~= nil then
-		return li
+	li.spec = li_spec
+
+	if li.spec == nil then
+		for current_line = line_num - 1, 1, -1 do
+			content, _, li_spec = M.pattern_match_line(current_line)
+
+			if content == "" then
+				break
+			end
+
+			table.insert(li.content, 0, content)
+
+			if li_spec ~= nil then
+				li.spec = li_spec
+				bounds.upper = current_line
+				break
+			end
+		end
+
+		if li.spec == nil then
+			return nil, bounds, preamble_len
+		end
 	end
 
-	return nil
+	for current_line = line_num + 1, buf_line_count do
+		content, _, li_spec = M.pattern_match_line(current_line)
+
+		if content == "" or li_spec ~= nil then
+			bounds.lower = current_line - 1
+			break
+		end
+
+		table.insert(li.content, content)
+
+		if current_line == buf_line_count then
+			bounds.lower = current_line
+		end
+	end
+
+	return li, bounds, preamble_len
 end
 
----@param line_text string Text of line to parse
----@return ListItem|nil # Nil if line does not contain ordered list item
-function M.parse_ordered_list_item_text(line_text)
+---@param line_num integer 1-indexed line number to pattern-match
+---@return string # Content detected in text i f root
+---@return integer # Number of whitespace characters before the content begins
+---@return ListSpec|nil # Nil if line does not contain list item root
+function M.pattern_match_line(line_num)
+	local text = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
 	local pattern = "^((%s*)%d+[%.%)]%s+)(.*)"
-	local preamble, indent, content = string.match(line_text, pattern)
+	local is_ordered = true
+	local preamble, indent, content = string.match(text, pattern)
 
 	if preamble == nil then
-		return nil
+		pattern = "^((%s*)[%-%*%+]%s+)(.*)"
+		is_ordered = false
+		preamble, indent, content = string.match(text, pattern)
+
+		if preamble == nil then
+			pattern = "^(%s*)(.*)"
+			preamble, content = string.match(text, pattern)
+			return content, string.len(preamble), nil
+		end
 	end
 
-	local preamble_length = string.len(preamble)
-	local is_task, is_completed, corrected_preamble_length, corrected_content = M.parse_task_marker_text(line_text)
+	local preamble_len = string.len(preamble)
+	local is_task, is_completed, corrected_content, corrected_preamble_len = M.pattern_match_task_root(text)
 	if is_task then
-		preamble_length = corrected_preamble_length
+		preamble_len = corrected_preamble_len
 		content = corrected_content
 	end
 
-	return {
-		is_ordered = true,
+	local li_spec = {
+		is_ordered = is_ordered,
 		is_task = is_task,
 		is_completed = is_completed,
 		index = 1,
 		indent_spaces = string.len(indent),
-		content = content,
-		read_time_preamble_length = preamble_length,
 	}
+
+	return content, preamble_len, li_spec
 end
 
----@param line_text string Text of line to parse
----@return ListItem|nil # Nil if line does not contain unordered list item
-function M.parse_unordered_list_item_text(line_text)
-	local pattern = "^((%s*)[%-%*%+]%s+)(.*)"
-	local preamble, indent, content = string.match(line_text, pattern)
-
-	if preamble == nil then
-		return nil
-	end
-
-	local preamble_length = string.len(preamble)
-	local is_task, is_completed, corrected_preamble_length, corrected_content = M.parse_task_marker_text(line_text)
-	if is_task then
-		preamble_length = corrected_preamble_length
-		content = corrected_content
-	end
-
-	return {
-		is_ordered = false,
-		is_task = is_task,
-		is_completed = is_completed,
-		index = 1,
-		indent_spaces = string.len(indent),
-		content = content,
-		read_time_preamble_length = preamble_length,
-	}
-end
-
----@param line_text string Text of line to parse
+---@param text string Text of line to parse
 ---@return boolean # True if line is task item
 ---@return boolean # True if marked as completed
----@return integer # Preamble length correcting for task marker
 ---@return string # Detected content correcting for task marker
-function M.parse_task_marker_text(line_text)
+---@return integer # Preamble length correcting for task marker
+function M.pattern_match_task_root(text)
 	local pattern = "^(%s*%-?%d*%.?%s%s?%s?%s?%[([%sxX])%]%s+)(.*)"
-	local preamble, completion, content = string.match(line_text, pattern)
+	local preamble, completion, content = string.match(text, pattern)
 
 	if preamble == nil then
-		return false, false, 0, ""
+		return false, false, "", 0
 	end
 
 	local is_completed = completion == "x" or completion == "X"
 
-	return true, is_completed, string.len(preamble), content
+	return true, is_completed, content, string.len(preamble)
 end
 
 ---See @field read_time_preamble_length for the original number of characters at read time.
