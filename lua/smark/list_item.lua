@@ -15,66 +15,72 @@
 
 local M = {}
 
----Scan current buffer text around the given line number, and if this text is part of a list item, parse the list item and return, along with bounds.
+---Scan current buffer (0) text around the given line number, and if this text is part of a list item, parse the list item and return, along with bounds.
 ---@param line_num integer 1-indexed line number to scan from
 ---@return ListItem|nil # Nil if line is not inside list item
 ---@return TextBlockBounds # Bounds containing list item
----@return integer # The original number of characters before the content begins at the current line
+---@return string[] raw Raw content within bounds
+---@return integer preamble_len The original number of characters before the content begins at the current line
 function M.scan_text_around_line(line_num)
 	local li = { spec = nil, content = {} }
 	local bounds = { upper = line_num, lower = line_num }
+	local raw = {}
+
 	local buf_line_count = vim.api.nvim_buf_line_count(0)
-	local content, preamble_len, li_spec = M.pattern_match_line(line_num)
+	local raw_line, content, preamble_len, li_spec = M.pattern_match_line(line_num)
 
 	if content == "" then
-		return nil, bounds, preamble_len
+		return nil, bounds, {}, preamble_len
 	end
 
 	li.spec = li_spec
 
 	if li.spec == nil then
-		for current_line = line_num - 1, 1, -1 do
-			content, _, li_spec = M.pattern_match_line(current_line)
+		for current_lnum = line_num - 1, 1, -1 do
+			raw_line, content, _, li_spec = M.pattern_match_line(current_lnum)
 
 			if content == "" then
 				break
 			end
 
-			table.insert(li.content, 0, content)
+			table.insert(li.content, 1, content)
+			table.insert(raw, 1, raw_line)
 
 			if li_spec ~= nil then
 				li.spec = li_spec
-				bounds.upper = current_line
+				bounds.upper = current_lnum
 				break
 			end
 		end
 
 		if li.spec == nil then
-			return nil, bounds, preamble_len
+			return nil, bounds, {}, preamble_len
 		end
 	end
 
-	for current_line = line_num + 1, buf_line_count do
-		content, _, li_spec = M.pattern_match_line(current_line)
+	for current_lnum = line_num + 1, buf_line_count do
+		raw_line, content, _, li_spec = M.pattern_match_line(current_lnum)
 
 		if content == "" or li_spec ~= nil then
-			bounds.lower = current_line - 1
+			bounds.lower = current_lnum - 1
 			break
 		end
 
 		table.insert(li.content, content)
+		table.insert(raw, raw_line)
 
-		if current_line == buf_line_count then
-			bounds.lower = current_line
+		if current_lnum == buf_line_count then
+			bounds.lower = current_lnum
 		end
 	end
 
-	return li, bounds, preamble_len
+	return li, bounds, raw, preamble_len
 end
 
 ---@param line_num integer 1-indexed line number to pattern-match
----@return string # Content detected in text i f root
----@return integer # Number of whitespace characters before the content begins
+---@return string raw Raw content of that line
+---@return string content Content detected in text
+---@return integer preamble_len Number of characters before the content begins
 ---@return ListSpec|nil # Nil if line does not contain list item root
 function M.pattern_match_line(line_num)
 	local text = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
@@ -90,7 +96,7 @@ function M.pattern_match_line(line_num)
 		if preamble == nil then
 			pattern = "^(%s*)(.*)"
 			preamble, content = string.match(text, pattern)
-			return content, string.len(preamble), nil
+			return text, content, string.len(preamble), nil
 		end
 	end
 
@@ -109,7 +115,7 @@ function M.pattern_match_line(line_num)
 		indent_spaces = string.len(indent),
 	}
 
-	return content, preamble_len, li_spec
+	return text, content, preamble_len, li_spec
 end
 
 ---@param text string Text of line to parse

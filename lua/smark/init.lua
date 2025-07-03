@@ -324,62 +324,49 @@ end
 ---@return TextBlockBounds|nil # Boundaries of containing list block, nil if cursor not in list block
 ---@return ListItem[] # Array of list items detected inside the list block
 ---@return string[] # Array of strings representing the original block content, line by line
+---@return integer preamble_len The original number of characters before the content begins at the current line
 function smark_private.get_list_block_around_cursor()
 	local cursor_row1, cursor_col0 = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row1 = cursor_row1, col0 = cursor_col0 }
-	local text = vim.api.nvim_buf_get_lines(0, cursor_row1 - 1, cursor_row1, true)[1]
-
-	local li, bounds = list_item.scan_text_around_line(cursor_coords.row1)
-
-	--- Below is old code
-
-	local li = list_item.from_string(text)
+	local li, li_bounds, raw_lines, preamble_len = list_item.scan_text_around_line(cursor_coords.row1)
 
 	if li == nil then
-		return cursor_coords, nil, {}, {}
+		return cursor_coords, nil, {}, {}, 0
 	end
 
-	local bounds = { upper = cursor_row1, lower = cursor_row1 }
-	local upper_bound_found, lower_bound_found = false, false
-	local li_array = {}
-	local text_array = {}
+	local li_block_bounds = { upper = li_bounds.upper, lower = li_bounds.lower }
+	local li_array = { li }
+	local original_contents = raw_lines
 
-	table.insert(li_array, li)
-	table.insert(text_array, text)
+	while li_block_bounds.upper > 1 do
+		li, li_bounds, raw_lines = list_item.scan_text_around_line(li_block_bounds.upper - 1)
 
-	while not upper_bound_found do
-		if bounds.upper == 1 then
-			upper_bound_found = true
-		else
-			text = vim.api.nvim_buf_get_lines(0, bounds.upper - 2, bounds.upper - 1, true)[1]
-			li = list_item.from_string(text)
-			if li == nil then
-				upper_bound_found = true
-			else
-				bounds.upper = bounds.upper - 1
-				table.insert(li_array, 1, li)
-				table.insert(text_array, 1, text)
-			end
+		if li == nil then
+			break
+		end
+
+		li_block_bounds.upper = li_bounds.upper
+		table.insert(li_array, 1, li)
+		for i = 1, #raw_lines do
+			table.insert(original_contents, i, raw_lines[i])
 		end
 	end
 
-	while not lower_bound_found do
-		if bounds.lower == vim.api.nvim_buf_line_count(0) then
-			lower_bound_found = true
-		else
-			text = vim.api.nvim_buf_get_lines(0, bounds.lower, bounds.lower + 1, true)[1]
-			li = list_item.from_string(text)
-			if li == nil then
-				lower_bound_found = true
-			else
-				bounds.lower = bounds.lower + 1
-				table.insert(li_array, li)
-				table.insert(text_array, text)
-			end
+	while li_block_bounds.lower < vim.api.nvim_buf_line_count(0) do
+		li, li_bounds, raw_lines = list_item.scan_text_around_line(li_block_bounds.lower + 1)
+
+		if li == nil then
+			break
+		end
+
+		li_block_bounds.lower = li_bounds.lower
+		table.insert(li_array, li)
+		for i = 1, #raw_lines do
+			table.insert(original_contents, raw_lines[i])
 		end
 	end
 
-	return cursor_coords, bounds, li_array, text_array
+	return cursor_coords, li_block_bounds, li_array, original_contents, preamble_len
 end
 
 ---Draw out string representations of list items in li_array between the lines specified by bounds.

@@ -9,7 +9,7 @@
   - [x] For visual mode
 - [ ] Handle multi-line bullets:
   - [x] Update list item schema to handle multi-line content
-  - [ ] Update code to scan document and generate list items
+  - [x] Update code to scan document and generate list items
   - [ ] Update code to write list items to screen
 - [ ] Handle insertion with "O"
 
