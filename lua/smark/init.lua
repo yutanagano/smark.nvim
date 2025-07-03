@@ -369,36 +369,42 @@ function smark_private.get_list_block_around_cursor()
 	return cursor_coords, li_block_bounds, li_array, original_contents, preamble_len
 end
 
----Draw out string representations of list items in li_array between the lines specified by bounds.
+---Draw out string representations of list items in li_array between the lines specified by bounds
 ---@param li_array ListItem[]
 ---@param original_text string[] Array containing original text contents of list block
 ---@param bounds TextBlockBounds
 ---@param rel_cursor_coords CursorCoords Cursor coordinates relative to bounds of list block
 function smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
-	if #li_array == #original_text then
-		for i, li in ipairs(li_array) do
-			local new_text = list_item.to_string(li)
+	local updated_text = {}
+	for _, li in ipairs(li_array) do
+		local li_as_strings = list_item.to_strings(li)
+		for _, s in ipairs(li_as_strings) do
+			table.insert(updated_text, s)
+		end
+	end
+
+	if #updated_text == #original_text then
+		for i, s in ipairs(updated_text) do
 			local absolute_ln = bounds.upper + i - 1
-			if original_text[i] ~= new_text then
-				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
+			if original_text[i] ~= s then
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
 		end
 		return
 	end
 
-	for i, li in ipairs(li_array) do
-		local new_text = list_item.to_string(li)
+	for i, s in ipairs(updated_text) do
 		local absolute_ln = bounds.upper + i - 1
 
 		if i < rel_cursor_coords.row1 then
-			if original_text[i] ~= new_text then
-				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
+			if original_text[i] ~= s then
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
 		elseif i == rel_cursor_coords.row1 then
-			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { new_text })
+			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
 		else
-			if original_text[i - 1] ~= new_text then
-				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { new_text })
+			if original_text[i - 1] ~= s then
+				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
 		end
 	end

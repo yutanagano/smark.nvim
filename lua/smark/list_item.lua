@@ -176,22 +176,22 @@ function M.get_nested_indent_spaces(li)
 end
 
 ---@param li ListItem
----@return string
-function M.to_string(li)
-	if li.indent_spaces == -1 then
+---@return string[]
+function M.to_strings(li)
+	if li.spec.indent_spaces == -1 then
 		return li.content
 	end
 
 	local marker, buffer
 
-	if li.is_ordered then
-		marker = tostring(li.index) .. "."
+	if li.spec.is_ordered then
+		marker = tostring(li.spec.index) .. "."
 	else
 		marker = "-"
 	end
 
-	if li.is_task then
-		if li.is_completed then
+	if li.spec.is_task then
+		if li.spec.is_completed then
 			buffer = " [x] "
 		else
 			buffer = " [ ] "
@@ -200,7 +200,15 @@ function M.to_string(li)
 		buffer = " "
 	end
 
-	return string.rep(" ", li.indent_spaces) .. marker .. buffer .. li.content
+	local li_as_strings = {}
+	for i, content_line in ipairs(li.content) do
+		if i == 1 then
+			content_line = string.rep(" ", li.spec.indent_spaces) .. marker .. buffer .. content_line
+		end
+		table.insert(li_as_strings, content_line)
+	end
+
+	return li_as_strings
 end
 
 ---@param li ListItem
