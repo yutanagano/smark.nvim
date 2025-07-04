@@ -7,6 +7,18 @@ local M = {}
 ---@param li_array_bounds TextBlockBounds bounds of list block
 ---@return LiCursorCoords
 function M.to_li_cursor_coords(cursor_coords, li_array, li_array_bounds)
+	local li_index, content_lnum = M.make_relative_to_containing_li(cursor_coords.row1, li_array, li_array_bounds)
+	return { list_index = li_index, content_lnum = content_lnum, col = cursor_coords.col0 }
+end
+
+---Compute the index for the list element that occupies the given line number, as well as the line number relative to that list item's content that it corresponds to.
+---Throws an error if the line number lies outside of the bounds.
+---@param line_num integer 1-indexed line number
+---@param li_array ListItem[]
+---@param li_array_bounds TextBlockBounds bounds of list block
+---@return integer li_index
+---@return integer content_lnum
+function M.make_relative_to_containing_li(line_num, li_array, li_array_bounds)
 	local current_li_bounds = { upper = li_array_bounds.upper - 1, lower = li_array_bounds.upper - 1 }
 
 	for i, li in ipairs(li_array) do
@@ -14,14 +26,19 @@ function M.to_li_cursor_coords(cursor_coords, li_array, li_array_bounds)
 		current_li_bounds.upper = current_li_bounds.lower + 1
 		current_li_bounds.lower = current_li_bounds.lower + current_li_num_lines
 
-		if cursor_coords.row1 >= current_li_bounds.upper and cursor_coords.row1 <= current_li_bounds.lower then
-			local content_lnum = cursor_coords.row1 - current_li_bounds.upper + 1
-			return { list_index = i, content_lnum = content_lnum, col = cursor_coords.col0 }
+		if line_num >= current_li_bounds.upper and line_num <= current_li_bounds.lower then
+			local content_lnum = line_num - current_li_bounds.upper + 1
+			return i, content_lnum
 		end
 	end
 
 	error(
-		string.format("rel_cursor_coords.row1 (%d) out of bounds (1 - %d)", cursor_coords.row1, current_li_bounds.lower)
+		string.format(
+			"line_num (%d) out of bounds (%d - %d)",
+			line_num,
+			current_li_bounds.upper,
+			current_li_bounds.lower
+		)
 	)
 end
 

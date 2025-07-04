@@ -106,7 +106,7 @@ function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
 	end
 end
 
----Edit li_array, ispec_array and li_cursor_coords in place to reflect indenting one level the rows from start_row to end_row inclusive.
+---Edit li_array, ispec_array and li_cursor_coords (if supplied) in place to reflect indenting one level the rows from start_row to end_row inclusive.
 ---Only call this function after first fixing format.
 ---Ensure that start_row and end_row are within bounds of the list block, otherwise this can cause undefined behaviour.
 ---Special case: Any indent applications from the root (first row) of an indent block will cause the entire block to indent.

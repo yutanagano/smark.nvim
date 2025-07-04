@@ -5,7 +5,7 @@ local list_item = require("smark.list_item")
 local M = {}
 
 ---Mutate array of list items in place to enforce correct indentation and numbering.
----Optionally mutate relative cursor coordinates in place if supplied.
+---Optionally mutate cursor coordinates in place if supplied.
 ---Return a corresponding array of indent specs that describe the resulting correct indentation information.
 ---@param li_array ListItem[]
 ---@param li_cursor_coords? LiCursorCoords

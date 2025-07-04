@@ -53,7 +53,8 @@ function smark_private.callback_insert_newline()
 end
 
 function smark_private.callback_insert_indent()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
+		smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		local ctrl_t = vim.api.nvim_replace_termcodes("<C-t>", true, false, true)
@@ -61,23 +62,24 @@ function smark_private.callback_insert_indent()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
 	list_manipulation.apply_indent(
 		li_array,
 		ispec_array,
-		rel_cursor_coords.row1,
-		rel_cursor_coords.row1,
-		rel_cursor_coords
+		li_cursor_coords.list_index,
+		li_cursor_coords.list_index,
+		li_cursor_coords
 	)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
 function smark_private.callback_insert_unindent()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
+		smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
@@ -85,18 +87,18 @@ function smark_private.callback_insert_unindent()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
 	list_manipulation.apply_unindent(
 		li_array,
 		ispec_array,
-		rel_cursor_coords.row1,
-		rel_cursor_coords.row1,
-		rel_cursor_coords
+		li_cursor_coords.list_index,
+		li_cursor_coords.list_index,
+		li_cursor_coords
 	)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
@@ -109,12 +111,12 @@ function smark_private.callback_normal_indent()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = rel_cursor_coords.row1
-	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_indent(li_array, ispec_array, start_row, end_row)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_index = li_cursor_coords.list_index
+	local end_index = math.min(#li_array, start_index + vim.v.count1 - 1)
+	local ispec_array = format.fix(li_array)
+	list_manipulation.apply_indent(li_array, ispec_array, start_index, end_index)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_unindent()
@@ -126,54 +128,64 @@ function smark_private.callback_normal_unindent()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = rel_cursor_coords.row1
-	local end_row = math.min(#li_array, start_row + vim.v.count1 - 1)
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_unindent(li_array, ispec_array, start_row, end_row)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_index = li_cursor_coords.list_index
+	local end_index = math.min(#li_array, start_index + vim.v.count1 - 1)
+	local ispec_array = format.fix(li_array)
+	list_manipulation.apply_unindent(li_array, ispec_array, start_index, end_index)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_indentop()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		return ">"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.normal_indentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.normal_indent_op"
 	return "g@"
 end
 
 function smark_private.callback_normal_unindentop()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		return "<"
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark'.normal_unindentop"
+	vim.opt.operatorfunc = "v:lua.require'smark'.normal_unindent_op"
 	return "g@"
 end
 
-function smark.normal_indentop()
+function smark.normal_indent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_indent(li_array, ispec_array, start_row, end_row)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'[")[2]
+	local end_row = vim.fn.getpos("']")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
+	list_manipulation.apply_indent(li_array, ispec_array, start_index, end_index)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
-function smark.normal_unindentop()
+function smark.normal_unindent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'[")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("']")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_unindent(li_array, ispec_array, start_row, end_row)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'[")[2]
+	local end_row = vim.fn.getpos("']")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
+	list_manipulation.apply_unindent(li_array, ispec_array, start_index, end_index)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_o()
@@ -234,7 +246,7 @@ function smark_private.callback_normal_checkbox()
 end
 
 function smark_private.callback_visual_indent()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
 	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
@@ -246,7 +258,7 @@ function smark_private.callback_visual_indent()
 end
 
 function smark_private.callback_visual_unindent()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
 	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
@@ -283,26 +295,36 @@ end
 
 function smark.visual_indent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'<")[2]
+	local end_row = vim.fn.getpos("'>")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
 	for _ = 1, vim.v.count1 do
-		list_manipulation.apply_indent(li_array, ispec_array, start_row, end_row)
+		list_manipulation.apply_indent(li_array, ispec_array, start_index, end_index)
 	end
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark.visual_unindent_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'<")[2]
+	local end_row = vim.fn.getpos("'>")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
 	for _ = 1, vim.v.count1 do
-		list_manipulation.apply_unindent(li_array, ispec_array, start_row, end_row)
+		list_manipulation.apply_unindent(li_array, ispec_array, start_index, end_index)
 	end
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark.visual_toggle_ordered_op()
