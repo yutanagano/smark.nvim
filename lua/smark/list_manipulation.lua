@@ -8,28 +8,31 @@ local M = {}
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
 ---@param rel_cursor_coords CursorCoords
-function M.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
-	local current_li = li_array[rel_cursor_coords.row1]
-	local current_ispec = ispec_array[rel_cursor_coords.row1]
+---@param read_time_preamble_len integer
+function M.apply_insert_newline(li_array, ispec_array, rel_cursor_coords, read_time_preamble_len)
+	local current_li_index, content_lnum = format.get_current_li_info(li_array, rel_cursor_coords)
+	local current_li = li_array[current_li_index]
+	local current_ispec = ispec_array[current_li_index]
 
-	if rel_cursor_coords.row1 == #li_array and current_li.content == "" then
+	if current_li_index == #li_array and current_li.content == "" then
 		M.apply_unindent(li_array, ispec_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
 		return
 	end
 
-	local content_after_cursor = list_item.get_content_after_cursor(current_li, rel_cursor_coords.col0)
-	list_item.truncate_content_at_cursor(current_li, rel_cursor_coords.col0)
+	local content_after_cursor =
+		list_item.get_content_after_cursor(current_li, read_time_preamble_len, rel_cursor_coords.col0, content_lnum)
+	list_item.truncate_content_at_cursor(current_li, read_time_preamble_len, rel_cursor_coords.col0, content_lnum)
 
 	local new_li = list_item.get_empty_like(current_li)
 	local new_ispec = format.get_indent_spec_like(current_ispec)
 	new_li.content = content_after_cursor
 
-	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
-	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
+	table.insert(li_array, current_li_index + 1, new_li)
+	table.insert(ispec_array, current_li_index + 1, new_ispec)
 
 	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
 	if rel_cursor_coords.col0 == 0 then
-		current_li.indent_spaces = -1
+		current_li.spec.indent_spaces = -1
 	else
 		rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
 	end
@@ -39,7 +42,7 @@ function M.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
 		format.update_indent_specs(li_array, ispec_array, line_num)
 	end
 
-	if string.sub(current_li.content, -1) == ":" and content_after_cursor == "" then
+	if string.sub(current_li.content[#current_li.content], -1) == ":" and content_after_cursor == { "" } then
 		M.apply_indent(li_array, ispec_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
 	end
 end

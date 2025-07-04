@@ -31,7 +31,8 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 function smark_private.callback_insert_newline()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
+		smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
@@ -40,8 +41,8 @@ function smark_private.callback_insert_newline()
 	end
 
 	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_insert_newline(li_array, ispec_array, rel_cursor_coords)
+	local ispec_array = format.fix(li_array)
+	list_manipulation.apply_insert_newline(li_array, ispec_array, rel_cursor_coords, read_time_preamble_len)
 	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
 
 	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }

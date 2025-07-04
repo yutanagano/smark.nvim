@@ -34,6 +34,8 @@ function M.scan_text_around_line(line_num)
 	end
 
 	li.spec = li_spec
+	li.content = { content }
+	raw = { raw_line }
 
 	if li.spec == nil then
 		for current_lnum = line_num - 1, 1, -1 do
@@ -136,42 +138,41 @@ function M.pattern_match_task_root(text)
 	return true, is_completed, content, string.len(preamble)
 end
 
----See @field read_time_preamble_length for the original number of characters at read time.
 ---@param li ListItem
----@return integer # Number of characters until start of contents
+---@return integer preamble_len Number of characters until start of contents
 function M.get_preamble_length(li)
-	if li.indent_spaces == -1 then
+	if li.spec.indent_spaces == -1 then
 		return 0
 	end
 
 	local marker_len, buffer_len
 
-	if li.is_ordered then
-		marker_len = string.len(tostring(li.index)) + 1
+	if li.spec.is_ordered then
+		marker_len = string.len(tostring(li.spec.index)) + 1
 	else
 		marker_len = 1
 	end
 
-	if li.is_task then
+	if li.spec.is_task then
 		buffer_len = 5
 	else
 		buffer_len = 1
 	end
 
-	return li.indent_spaces + marker_len + buffer_len
+	return li.spec.indent_spaces + marker_len + buffer_len
 end
 
 ---@param li ListItem
----@return integer # The number of spaces required to be registered as nested list item of one given
+---@return integer ispaces The number of spaces required to be registered as nested list item of one given
 function M.get_nested_indent_spaces(li)
-	if li.indent_spaces == -1 then
+	if li.spec.indent_spaces == -1 then
 		return 0
 	end
 
-	if li.is_ordered then
-		return li.indent_spaces + string.len(tostring(li.index)) + 2
+	if li.spec.is_ordered then
+		return li.spec.indent_spaces + string.len(tostring(li.spec.index)) + 2
 	else
-		return li.indent_spaces + 2
+		return li.spec.indent_spaces + 2
 	end
 end
 
@@ -215,39 +216,53 @@ end
 ---@return ListItem
 function M.get_empty_like(li)
 	return {
-		is_ordered = li.is_ordered,
-		is_task = li.is_task,
-		is_completed = false,
-		index = 1,
-		indent_spaces = li.indent_spaces,
+		spec = {
+			is_ordered = li.spec.is_ordered,
+			is_task = li.spec.is_task,
+			is_completed = false,
+			index = 1,
+			indent_spaces = li.spec.indent_spaces,
+		},
 		content = "",
 	}
 end
 
 ---Return the content string that lies to the right of the cursor.
 ---@param li ListItem
+---@param read_time_preamble_len integer
 ---@param cursor_col integer 0-indexed cursor column position
----@return string
-function M.get_content_after_cursor(li, cursor_col)
-	if cursor_col <= li.read_time_preamble_length then
-		return li.content
+---@param content_lnum integer The 1-index line number within the list item contents that the cursor is on
+---@return string[]
+function M.get_content_after_cursor(li, read_time_preamble_len, cursor_col, content_lnum)
+	local content_after_cursor = { table.unpack(li.content, content_lnum, #li.content) }
+
+	if cursor_col <= read_time_preamble_len then
+		return content_after_cursor
 	end
 
-	local relative_col_index = cursor_col - li.read_time_preamble_length + 1
-	return string.sub(li.content, relative_col_index)
+	local relative_col_index = cursor_col - read_time_preamble_len + 1
+	content_after_cursor[1] = string.sub(content_after_cursor[1], relative_col_index)
+	return content_after_cursor
 end
 
 ---Modify a list item's content string, truncating any content to the right of the cursor.
 ---@param li ListItem
+---@param read_time_preamble_len integer
 ---@param cursor_col integer 0-indexed cursor column position
-function M.truncate_content_at_cursor(li, cursor_col)
-	if cursor_col <= li.read_time_preamble_length then
-		li.content = ""
+---@param content_lnum integer The 1-index line number within the list item contents that the cursor is on
+function M.truncate_content_at_cursor(li, read_time_preamble_len, cursor_col, content_lnum)
+	local content_before_cursor = { table.unpack(li.content, 1, content_lnum - 1) }
+	local content_on_cursor_line = li.content[content_lnum]
+
+	if cursor_col <= read_time_preamble_len then
+		li.content = content_before_cursor
 		return
 	end
 
-	local relative_cutoff = cursor_col - li.read_time_preamble_length
-	li.content = string.sub(li.content, 1, relative_cutoff)
+	local relative_cutoff = cursor_col - read_time_preamble_len
+	content_on_cursor_line = string.sub(content_on_cursor_line, 1, relative_cutoff)
+	table.insert(content_before_cursor, content_on_cursor_line)
+	li.content = content_before_cursor
 end
 
 return M
