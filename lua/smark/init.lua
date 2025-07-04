@@ -1,3 +1,6 @@
+require("smark.types")
+
+local cursor = require("smark.cursor")
 local list_item = require("smark.list_item")
 local format = require("smark.format")
 local list_manipulation = require("smark.list_manipulation")
@@ -40,12 +43,12 @@ function smark_private.callback_insert_newline()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array)
-	list_manipulation.apply_insert_newline(li_array, ispec_array, rel_cursor_coords, read_time_preamble_len)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
+	list_manipulation.apply_insert_newline(li_array, ispec_array, li_cursor_coords, read_time_preamble_len)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 end
 
@@ -374,8 +377,8 @@ end
 ---@param li_array ListItem[]
 ---@param original_text string[] Array containing original text contents of list block
 ---@param bounds TextBlockBounds
----@param rel_cursor_coords CursorCoords Cursor coordinates relative to bounds of list block
-function smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+---@param li_cursor_coords LiCursorCoords
+function smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 	local updated_text = {}
 	for _, li in ipairs(li_array) do
 		local li_as_strings = list_item.to_strings(li)
@@ -397,11 +400,11 @@ function smark_private.draw_list_items(li_array, original_text, bounds, rel_curs
 	for i, s in ipairs(updated_text) do
 		local absolute_ln = bounds.upper + i - 1
 
-		if i < rel_cursor_coords.row1 then
+		if i < li_cursor_coords.list_index then
 			if original_text[i] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
-		elseif i == rel_cursor_coords.row1 then
+		elseif i == li_cursor_coords.list_index then
 			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
 		else
 			if original_text[i - 1] ~= s then

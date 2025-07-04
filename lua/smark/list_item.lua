@@ -1,17 +1,4 @@
----@class ListItem
----@field spec ListSpec List item characteristics necessary to properly render it.
----@field content string[] The text content of the list item.
-
----@class ListSpec
----@field is_ordered boolean True if ordered list element.
----@field is_task boolean True if task list element.
----@field is_completed boolean True if task which is marked completed.
----@field index integer The item index number.
----@field indent_spaces integer The indentation level of the line in number of spaces. -1 results in a line with no list marker element.
-
----@class TextBlockBounds
----@field upper integer 1-indexed upper bound line number
----@field lower integer 1-indexed lower bound line number
+require("smark.types")
 
 local M = {}
 
@@ -207,8 +194,11 @@ function M.to_strings(li)
 
 	local li_as_strings = {}
 	for i, content_line in ipairs(li.content) do
+		local preamble = string.rep(" ", li.spec.indent_spaces) .. marker .. buffer
 		if i == 1 then
-			content_line = string.rep(" ", li.spec.indent_spaces) .. marker .. buffer .. content_line
+			content_line = preamble .. content_line
+		else
+			content_line = string.rep(" ", string.len(preamble)) .. content_line
 		end
 		table.insert(li_as_strings, content_line)
 	end
@@ -234,31 +224,30 @@ end
 ---Return the content string that lies to the right of the cursor.
 ---@param li ListItem
 ---@param read_time_preamble_len integer
----@param cursor_col integer 0-indexed cursor column position
----@param content_lnum integer The 1-index line number within the list item contents that the cursor is on
+---@param li_cursor_coords LiCursorCoords
 ---@return string[]
-function M.get_content_after_cursor(li, read_time_preamble_len, cursor_col, content_lnum)
-	local content_after_cursor = { table.unpack(li.content, content_lnum, #li.content) }
+function M.get_content_after_cursor(li, read_time_preamble_len, li_cursor_coords)
+	local content_after_cursor = { table.unpack(li.content, li_cursor_coords.content_lnum, #li.content) }
 
-	if cursor_col <= read_time_preamble_len then
+	if li_cursor_coords.col <= read_time_preamble_len then
 		return content_after_cursor
 	end
 
-	local relative_col_index = cursor_col - read_time_preamble_len + 1
-	content_after_cursor[1] = string.sub(content_after_cursor[1], relative_col_index)
+	local relative_col = li_cursor_coords.col - read_time_preamble_len + 1
+	content_after_cursor[1] = string.sub(content_after_cursor[1], relative_col)
+
 	return content_after_cursor
 end
 
 ---Modify a list item's content string, truncating any content to the right of the cursor.
 ---@param li ListItem
 ---@param read_time_preamble_len integer
----@param cursor_col integer 0-indexed cursor column position
----@param content_lnum integer The 1-index line number within the list item contents that the cursor is on
-function M.truncate_content_at_cursor(li, read_time_preamble_len, cursor_col, content_lnum)
-	local content_before_cursor = { table.unpack(li.content, 1, content_lnum - 1) }
-	local content_on_cursor_line = li.content[content_lnum]
+---@param li_cursor_coords LiCursorCoords
+function M.truncate_content_at_cursor(li, read_time_preamble_len, li_cursor_coords)
+	local content_before_cursor = { table.unpack(li.content, 1, li_cursor_coords.content_lnum - 1) }
+	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
 
-	if cursor_col <= read_time_preamble_len then
+	if li_cursor_coords.col <= read_time_preamble_len then
 		if #content_before_cursor == 0 then
 			content_before_cursor = { "" }
 		end
@@ -266,10 +255,20 @@ function M.truncate_content_at_cursor(li, read_time_preamble_len, cursor_col, co
 		return
 	end
 
-	local relative_cutoff = cursor_col - read_time_preamble_len
+	local relative_cutoff = li_cursor_coords.col - read_time_preamble_len
 	content_on_cursor_line = string.sub(content_on_cursor_line, 1, relative_cutoff)
 	table.insert(content_before_cursor, content_on_cursor_line)
 	li.content = content_before_cursor
+end
+
+---@param li ListItem
+function M.content_is_empty(li)
+	return #li.content == 1 and li.content[1] == ""
+end
+
+---@param li ListItem
+function M.content_ends_in_colon(li)
+	return string.sub(li.content[#li.content], -1) == ":"
 end
 
 return M

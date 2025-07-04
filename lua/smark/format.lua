@@ -1,12 +1,4 @@
----@class CursorCoords
----@field row1 integer 1-indexed row number of cursor
----@field col0 integer 0-indexed column number of cursor
-
----@alias indent_spec IndentLevelSpec[] Integer array describing the number of indent spaces required to align to each level, up to current
-
----@class IndentLevelSpec
----@field is_ordered boolean
----@field indent_spaces integer
+require("smark.types")
 
 local list_item = require("smark.list_item")
 
@@ -16,13 +8,19 @@ local M = {}
 ---Optionally mutate relative cursor coordinates in place if supplied.
 ---Return a corresponding array of indent specs that describe the resulting correct indentation information.
 ---@param li_array ListItem[]
+---@param li_cursor_coords? LiCursorCoords
+---@param original_preamble_len? integer The number of characters before content on the cursor line at read time. If not supplied, then is computed assuming that the list item had no extra whitespace characters before the content, which is not necessarily the case at read time.
 ---@return indent_spec[]
-function M.fix(li_array)
+function M.fix(li_array, li_cursor_coords, original_preamble_len)
 	local ispec_array = {}
 	local index_counter = {}
 	local prev_original_indent_spaces
 
 	for i, li in ipairs(li_array) do
+		if li_cursor_coords ~= nil and li_cursor_coords.list_index == i and original_preamble_len == nil then
+			original_preamble_len = list_item.get_preamble_length(li)
+		end
+
 		if i == 1 then
 			li.spec.index = 1
 			ispec_array[1] = { { is_ordered = li.spec.is_ordered, indent_spaces = li.spec.indent_spaces } }
@@ -79,9 +77,13 @@ function M.fix(li_array)
 			ispec_array[i] = ispec
 		end
 
-		-- if rel_cursor_coords ~= nil and i == cursor_li_index and rel_cursor_coords.col0 >= original_preamble_len then
-		-- 	rel_cursor_coords.col0 = rel_cursor_coords.col0 + list_item.get_preamble_length(li) - original_preamble_len
-		-- end
+		if
+			li_cursor_coords ~= nil
+			and li_cursor_coords.list_index == i
+			and li_cursor_coords.col >= original_preamble_len
+		then
+			li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
+		end
 	end
 
 	return ispec_array
@@ -90,8 +92,8 @@ end
 ---Only call this function _after_ fixing indentation, otherwise there will be undefined behaviour with respect to cursor position correction.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param rel_cursor_coords? CursorCoords Cursor coordinates relative to li_array
-function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
+---@param li_cursor_coords? LiCursorCoords
+function M.fix_numbering(li_array, ispec_array, li_cursor_coords)
 	assert(
 		#li_array == #ispec_array,
 		string.format("Lengths of li_array (%d) and ispec_array (%d) must be the same", #li_array, #ispec_array)
@@ -117,12 +119,12 @@ function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 				index_counter[current_ilevel] = 1
 			end
 
-			if rel_cursor_coords ~= nil and rel_cursor_coords.row1 == i then
+			if li_cursor_coords ~= nil and li_cursor_coords.list_index == i then
 				local prev_preamble_len = list_item.get_preamble_length(li)
 				li.spec.index = index_counter[current_ilevel]
-				if rel_cursor_coords.col0 >= prev_preamble_len then
+				if li_cursor_coords.col >= prev_preamble_len then
 					local new_preamble_len = list_item.get_preamble_length(li)
-					rel_cursor_coords.col0 = rel_cursor_coords.col0 + new_preamble_len - prev_preamble_len
+					li_cursor_coords.col = li_cursor_coords.col + new_preamble_len - prev_preamble_len
 				end
 			else
 				li.spec.index = index_counter[current_ilevel]
@@ -132,34 +134,6 @@ function M.fix_numbering(li_array, ispec_array, rel_cursor_coords)
 			index_counter[current_ilevel + 1] = 1
 		end
 	end
-end
-
----Compute the index of the list item in list_array that the cursor is currently inside of
----@param li_array ListItem[]
----@param rel_cursor_coords CursorCoords
----@return integer current_li_index
----@return integer content_lnum The line number within the contents of the list item that the cursor is on
-function M.get_current_li_info(li_array, rel_cursor_coords)
-	local current_li_bounds = { upper = 0, lower = 0 }
-
-	for i, li in ipairs(li_array) do
-		local current_li_num_lines = #li.content
-		current_li_bounds.upper = current_li_bounds.lower + 1
-		current_li_bounds.lower = current_li_bounds.lower + current_li_num_lines
-
-		if rel_cursor_coords.row1 >= current_li_bounds.upper and rel_cursor_coords.row1 <= current_li_bounds.lower then
-			local content_lnum = i - current_li_bounds.upper + 1
-			return i, content_lnum
-		end
-	end
-
-	error(
-		string.format(
-			"rel_cursor_coords.row1 (%d) out of bounds (1 - %d)",
-			rel_cursor_coords.row1,
-			current_li_bounds.lower
-		)
-	)
 end
 
 ---Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
