@@ -7,16 +7,17 @@
   - [x] For normal mode:
     - [x] Make it so that ticking all children automatically ticks the parent
   - [x] For visual mode
-- [ ] Handle multi-line bullets:
+- [x] Handle multi-line bullets:
   - [x] Update list item schema to handle multi-line content
   - [x] Update code to scan document and generate list items
   - [x] Update code to write list items to screen
   - [x] Make sure insert <CR> is working
   - [x] Make sure normal o is working
   - [x] Make sure in/outdent keybinds are working
-  - [ ] Make sure list formatting / numbering / ticking shortcuts are working
+  - [x] Make sure list formatting / numbering / ticking shortcuts are working
 - [ ] Make it so that when adding a new line (using <CR> or o) inside of a task list block, make sure the parent level item becomes marked as incomplete (because there is now at least one child that is incomplete)
 - [ ] Make it so that when list elements are fully outdented (they are no longer list elements), empty lines are added in the spaces between any adjacent list elements and normal paragraph lines
+- [ ] Clean up variable / field names
 - [ ] Clean up unwieldy loops
 - [ ] Handle insertion with "O"
 

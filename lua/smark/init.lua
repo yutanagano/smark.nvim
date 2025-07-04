@@ -269,7 +269,7 @@ function smark_private.callback_visual_unindent()
 end
 
 function smark_private.callback_visual_toggle_ordered()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
 	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
@@ -281,7 +281,7 @@ function smark_private.callback_visual_toggle_ordered()
 end
 
 function smark_private.callback_visual_checkbox()
-	local _, bounds, _ = smark_private.get_list_block_around_cursor()
+	local _, bounds = smark_private.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
 	if bounds == nil or highlight_bound_row < bounds.upper or highlight_bound_row > bounds.lower then
@@ -328,22 +328,32 @@ end
 
 function smark.visual_toggle_ordered_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.toggle_visual_ordered_type(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'<")[2]
+	local end_row = vim.fn.getpos("'>")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
+	list_manipulation.toggle_visual_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark.visual_toggle_checkbox_op()
 	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local start_row = vim.fn.getpos("'<")[2] - bounds.upper + 1
-	local end_row = vim.fn.getpos("'>")[2] - bounds.upper + 1
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	assert(bounds ~= nil, "op called outside of list block")
+
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local start_row = vim.fn.getpos("'<")[2]
+	local end_row = vim.fn.getpos("'>")[2]
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+
+	local ispec_array = format.fix(li_array)
+	list_manipulation.toggle_visual_checkbox(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 ---@return CursorCoords

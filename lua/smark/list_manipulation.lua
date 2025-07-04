@@ -335,20 +335,20 @@ end
 ---Ensure that start_row and end_row are within bounds.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param start_row integer 1-indexed number of first line to unindent
----@param end_row integer 1-indexed number of last line to indent
----@param rel_cursor_coords CursorCoords
-function M.toggle_visual_ordered_type(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
-	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+---@param start_index integer 1-indexed number of first line to unindent
+---@param end_index integer 1-indexed number of last line to indent
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_visual_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
 	local cursor_ordered = cursor_ispec[#cursor_ispec].is_ordered
 
-	for current_row = start_row, end_row do
-		li_array[current_row].is_ordered = not cursor_ordered
-		local current_ispec = ispec_array[current_row]
+	for i = start_index, end_index do
+		li_array[i].spec.is_ordered = not cursor_ordered
+		local current_ispec = ispec_array[i]
 		local current_ilevel = #current_ispec
 		current_ispec[current_ilevel].is_ordered = not cursor_ordered
 
-		for subtree_row = current_row + 1, #li_array do
+		for subtree_row = i + 1, #li_array do
 			local subtree_ispec = ispec_array[subtree_row]
 			local subtree_ilevel = #subtree_ispec
 
@@ -362,8 +362,8 @@ function M.toggle_visual_ordered_type(li_array, ispec_array, start_row, end_row,
 
 	format.fix_numbering(li_array, ispec_array)
 
-	for row1 = start_row + 1, #li_array do
-		format.update_indent_specs(li_array, ispec_array, row1)
+	for i = start_index + 1, #li_array do
+		format.update_indent_specs(li_array, ispec_array, i)
 	end
 end
 
@@ -472,19 +472,19 @@ end
 ---@param ispec_array indent_spec[]
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
----@param rel_cursor_coords CursorCoords
-function M.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
-	local cursor_li = li_array[rel_cursor_coords.row1]
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, li_cursor_coords)
+	local cursor_li = li_array[li_cursor_coords.list_index]
 
 	local toggle_to = true
-	if cursor_li.is_task then
-		toggle_to = not cursor_li.is_completed
+	if cursor_li.spec.is_task then
+		toggle_to = not cursor_li.spec.is_completed
 	end
 
-	for current_row = start_row, end_row do
-		local current_li = li_array[current_row]
-		if current_li.is_task then
-			current_li.is_completed = toggle_to
+	for i = start_row, end_row do
+		local current_li = li_array[i]
+		if current_li.spec.is_task then
+			current_li.spec.is_completed = toggle_to
 		end
 	end
 end
