@@ -208,15 +208,14 @@ function smark_private.callback_normal_o()
 end
 
 function smark_private.callback_normal_format()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local _, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	format.fix(li_array, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	format.fix(li_array)
+	smark_private.draw_list_items(li_array, original_text, bounds)
 end
 
 function smark_private.callback_normal_toggle_ordered()
@@ -226,10 +225,10 @@ function smark_private.callback_normal_toggle_ordered()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.toggle_normal_ordered_type(li_array, ispec_array, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords)
+	list_manipulation.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_checkbox()
@@ -239,10 +238,10 @@ function smark_private.callback_normal_checkbox()
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords)
+	list_manipulation.toggle_normal_checkbox(li_array, ispec_array, li_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 end
 
 function smark_private.callback_visual_indent()
@@ -400,7 +399,7 @@ end
 ---@param li_array ListItem[]
 ---@param original_text string[] Array containing original text contents of list block
 ---@param bounds TextBlockBounds
----@param li_cursor_coords LiCursorCoords
+---@param li_cursor_coords? LiCursorCoords
 function smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 	local updated_text = {}
 	for _, li in ipairs(li_array) do
@@ -419,6 +418,8 @@ function smark_private.draw_list_items(li_array, original_text, bounds, li_curso
 		end
 		return
 	end
+
+	assert(li_cursor_coords ~= nil, "li_cursor_coords must be supplied if active changes have been made to the text")
 
 	for i, s in ipairs(updated_text) do
 		local absolute_ln = bounds.upper + i - 1

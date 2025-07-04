@@ -280,44 +280,44 @@ end
 ---Only call this function after first fixing format.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param rel_cursor_coords CursorCoords
-function M.toggle_normal_ordered_type(li_array, ispec_array, rel_cursor_coords)
-	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
+	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
 	local cursor_ilevel = #cursor_ispec
 	local cursor_ordered = cursor_ispec[cursor_ilevel].is_ordered
 
-	local current_row = rel_cursor_coords.row1
+	local i = li_cursor_coords.list_index
 	local upper_bound_reached = false
 	local upper_bound = 1
-	while current_row >= 1 and not upper_bound_reached do
-		local current_ispec = ispec_array[current_row]
+	while i >= 1 and not upper_bound_reached do
+		local current_ispec = ispec_array[i]
 		if #current_ispec < cursor_ilevel then
 			upper_bound_reached = true
-			upper_bound = current_row + 1
+			upper_bound = i + 1
 		else
 			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
 			if #current_ispec == cursor_ilevel then
-				li_array[current_row].is_ordered = not cursor_ordered
+				li_array[i].spec.is_ordered = not cursor_ordered
 			end
 		end
-		current_row = current_row - 1
+		i = i - 1
 	end
 
-	current_row = rel_cursor_coords.row1 + 1
+	i = li_cursor_coords.list_index + 1
 	local lower_bound_reached = false
 	local lower_bound = #li_array
-	while current_row <= #li_array and not lower_bound_reached do
-		local current_ispec = ispec_array[current_row]
+	while i <= #li_array and not lower_bound_reached do
+		local current_ispec = ispec_array[i]
 		if #current_ispec < cursor_ilevel then
 			lower_bound_reached = true
-			lower_bound = current_row - 1
+			lower_bound = i - 1
 		else
 			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
 			if #current_ispec == cursor_ilevel then
-				li_array[current_row].is_ordered = not cursor_ordered
+				li_array[i].spec.is_ordered = not cursor_ordered
 			end
 		end
-		current_row = current_row + 1
+		i = i + 1
 	end
 
 	format.fix_numbering(li_array, ispec_array)
@@ -374,29 +374,29 @@ end
 ---Only call this function after first fixing format.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param rel_cursor_coords CursorCoords
-function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
-	local cursor_li = li_array[rel_cursor_coords.row1]
-	local cursor_ispec = ispec_array[rel_cursor_coords.row1]
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_normal_checkbox(li_array, ispec_array, li_cursor_coords)
+	local cursor_li = li_array[li_cursor_coords.list_index]
+	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
 	local cursor_ilevel = #cursor_ispec
 
-	if not cursor_li.is_task then
+	if not cursor_li.spec.is_task then
 		return
 	end
 
-	local toggle_to = not cursor_li.is_completed
-	cursor_li.is_completed = toggle_to
+	local toggle_to = not cursor_li.spec.is_completed
+	cursor_li.spec.is_completed = toggle_to
 
-	for current_row = rel_cursor_coords.row1 + 1, #li_array do
-		local current_ispec = ispec_array[current_row]
+	for i = li_cursor_coords.list_index + 1, #li_array do
+		local current_ispec = ispec_array[i]
 
 		if #current_ispec <= cursor_ilevel then
 			break
 		end
 
-		local child_li = li_array[current_row]
-		if child_li.is_task then
-			child_li.is_completed = toggle_to
+		local child_li = li_array[i]
+		if child_li.spec.is_task then
+			child_li.spec.is_completed = toggle_to
 		end
 	end
 
@@ -405,25 +405,23 @@ function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
 	end
 
 	local parent
-	local siblings_all_completed
+	local incomplete_sibling_found = false
 
-	if toggle_to then
-		siblings_all_completed = true
-	else
-		siblings_all_completed = false
+	if toggle_to == false then
+		incomplete_sibling_found = true
 	end
 
-	for current_row = rel_cursor_coords.row1 - 1, 1, -1 do
-		local current_ispec = ispec_array[current_row]
-		local current_li = li_array[current_row]
+	for i = li_cursor_coords.list_index - 1, 1, -1 do
+		local current_ispec = ispec_array[i]
+		local current_li = li_array[i]
 
 		if
-			siblings_all_completed
+			not incomplete_sibling_found
 			and #current_ispec == cursor_ilevel
-			and current_li.is_task
-			and not current_li.is_completed
+			and current_li.spec.is_task
+			and not current_li.spec.is_completed
 		then
-			siblings_all_completed = false
+			incomplete_sibling_found = true
 		end
 
 		if #current_ispec < cursor_ilevel then
@@ -432,22 +430,22 @@ function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
 		end
 	end
 
-	if not siblings_all_completed then
-		parent.is_completed = false
+	if incomplete_sibling_found then
+		parent.spec.is_completed = false
 		return
 	end
 
-	for current_row = rel_cursor_coords.row1 + 1, #li_array do
-		local current_ispec = ispec_array[current_row]
-		local current_li = li_array[current_row]
+	for i = li_cursor_coords.list_index + 1, #li_array do
+		local current_ispec = ispec_array[i]
+		local current_li = li_array[i]
 
 		if
-			siblings_all_completed
+			not incomplete_sibling_found
 			and #current_ispec == cursor_ilevel
-			and current_li.is_task
-			and not current_li.is_completed
+			and current_li.spec.is_task
+			and not current_li.spec.is_completed
 		then
-			siblings_all_completed = false
+			incomplete_sibling_found = true
 			break
 		end
 
@@ -456,10 +454,10 @@ function M.toggle_normal_checkbox(li_array, ispec_array, rel_cursor_coords)
 		end
 	end
 
-	if siblings_all_completed then
-		parent.is_completed = true
+	if incomplete_sibling_found then
+		parent.spec.is_completed = false
 	else
-		parent.is_completed = false
+		parent.spec.is_completed = true
 	end
 end
 
