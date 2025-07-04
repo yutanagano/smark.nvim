@@ -217,7 +217,7 @@ function M.get_empty_like(li)
 			index = 1,
 			indent_spaces = li.spec.indent_spaces,
 		},
-		content = "",
+		content = { "" },
 	}
 end
 

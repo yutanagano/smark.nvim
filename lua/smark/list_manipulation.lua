@@ -61,40 +61,48 @@ function M.apply_insert_newline(li_array, ispec_array, li_cursor_coords, read_ti
 	end
 end
 
----Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of "o" in normal mode at the specified relative cursor coordinates.
+---Edit li_array, ispec_array and li_cursor_coords in place to reflect the entry of "o" in normal mode at the specified relative cursor coordinates.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param rel_cursor_coords CursorCoords
-function M.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
-	local current_li = li_array[rel_cursor_coords.row1]
-	local current_ispec = ispec_array[rel_cursor_coords.row1]
+---@param li_cursor_coords LiCursorCoords
+function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
+	local current_li = li_array[li_cursor_coords.list_index]
+	local current_ispec = ispec_array[li_cursor_coords.list_index]
 
-	if rel_cursor_coords.row1 == #li_array and current_li.content == "" then
+	if li_cursor_coords.list_index == #li_array and list_item.content_is_empty(current_li) then
 		local new_li = list_item.get_empty_like(current_li)
-		new_li.indent_spaces = -1
+		new_li.spec.indent_spaces = -1
 		table.insert(li_array, new_li)
 		table.insert(ispec_array, {})
-		rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
-		rel_cursor_coords.col0 = 0
+		li_cursor_coords.list_index = li_cursor_coords.list_index + 1
+		li_cursor_coords.content_lnum = 1
+		li_cursor_coords.col = 0
 		return
 	end
 
 	local new_li = list_item.get_empty_like(current_li)
 	local new_ispec = format.get_indent_spec_like(current_ispec)
 
-	table.insert(li_array, rel_cursor_coords.row1 + 1, new_li)
-	table.insert(ispec_array, rel_cursor_coords.row1 + 1, new_ispec)
+	table.insert(li_array, li_cursor_coords.list_index + 1, new_li)
+	table.insert(ispec_array, li_cursor_coords.list_index + 1, new_ispec)
 
-	rel_cursor_coords.row1 = rel_cursor_coords.row1 + 1
-	rel_cursor_coords.col0 = list_item.get_preamble_length(new_li)
+	li_cursor_coords.list_index = li_cursor_coords.list_index + 1
+	li_cursor_coords.content_lnum = 1
+	li_cursor_coords.col = list_item.get_preamble_length(new_li)
 
-	format.fix_numbering(li_array, ispec_array, rel_cursor_coords)
-	for line_num = rel_cursor_coords.row1, #li_array do
-		format.update_indent_specs(li_array, ispec_array, line_num)
+	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
+	for i = li_cursor_coords.list_index + 1, #li_array do
+		format.update_indent_specs(li_array, ispec_array, i)
 	end
 
-	if string.sub(current_li.content, -1) == ":" then
-		M.apply_indent(li_array, ispec_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
+	if list_item.content_ends_in_colon(current_li) then
+		M.apply_indent(
+			li_array,
+			ispec_array,
+			li_cursor_coords.list_index,
+			li_cursor_coords.list_index,
+			li_cursor_coords
+		)
 	end
 end
 

@@ -177,19 +177,20 @@ function smark.normal_unindentop()
 end
 
 function smark_private.callback_normal_o()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
+		smark_private.get_list_block_around_cursor()
 
 	if bounds == nil then
 		vim.api.nvim_feedkeys("o", "ni", false)
 		return
 	end
 
-	local rel_cursor_coords = { row1 = cursor_coords.row1 - bounds.upper + 1, col0 = cursor_coords.col0 }
-	local ispec_array = format.fix(li_array, rel_cursor_coords)
-	list_manipulation.apply_normal_o(li_array, ispec_array, rel_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, rel_cursor_coords)
+	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
+	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
+	list_manipulation.apply_normal_o(li_array, ispec_array, li_cursor_coords)
+	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
-	cursor_coords = { row1 = rel_cursor_coords.row1 + bounds.upper - 1, col0 = rel_cursor_coords.col0 }
+	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
 	vim.cmd("startinsert!")
 end
