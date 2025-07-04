@@ -29,7 +29,7 @@ function M.scan_text_around_line(line_num)
 	local buf_line_count = vim.api.nvim_buf_line_count(0)
 	local raw_line, content, preamble_len, li_spec = M.pattern_match_line(line_num)
 
-	if content == "" then
+	if li_spec == nil and content == "" then
 		return nil, bounds, {}, preamble_len
 	end
 
@@ -74,6 +74,10 @@ function M.scan_text_around_line(line_num)
 		if current_lnum == buf_line_count then
 			bounds.lower = current_lnum
 		end
+	end
+
+	if #li.content == 0 then
+		error("empty content!")
 	end
 
 	return li, bounds, raw, preamble_len
@@ -255,6 +259,9 @@ function M.truncate_content_at_cursor(li, read_time_preamble_len, cursor_col, co
 	local content_on_cursor_line = li.content[content_lnum]
 
 	if cursor_col <= read_time_preamble_len then
+		if #content_before_cursor == 0 then
+			content_before_cursor = { "" }
+		end
 		li.content = content_before_cursor
 		return
 	end

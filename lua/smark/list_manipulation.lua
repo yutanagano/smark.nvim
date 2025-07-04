@@ -14,7 +14,7 @@ function M.apply_insert_newline(li_array, ispec_array, rel_cursor_coords, read_t
 	local current_li = li_array[current_li_index]
 	local current_ispec = ispec_array[current_li_index]
 
-	if current_li_index == #li_array and current_li.content == "" then
+	if current_li_index == #li_array and #current_li.content == 1 and current_li.content[1] == "" then
 		M.apply_unindent(li_array, ispec_array, rel_cursor_coords.row1, rel_cursor_coords.row1, rel_cursor_coords)
 		return
 	end
@@ -175,12 +175,12 @@ end
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param rel_cursor_coords? CursorCoords
 function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_coords)
-	local root_indent_level = li_array[1].indent_spaces
+	local root_indent_level = li_array[1].spec.indent_spaces
 
 	if root_indent_level > 0 then
 		local min_ilevel_in_selection
 		for row1 = start_row, end_row do
-			local current_ilevel = li_array[row1].indent_spaces
+			local current_ilevel = li_array[row1].spec.indent_spaces
 			if min_ilevel_in_selection == nil or current_ilevel < min_ilevel_in_selection then
 				min_ilevel_in_selection = current_ilevel
 			end
@@ -190,7 +190,7 @@ function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_
 			local deindent_amount = math.min(2, root_indent_level)
 			for row1 = 1, #li_array do
 				local current_li = li_array[row1]
-				current_li.indent_spaces = current_li.indent_spaces - deindent_amount
+				current_li.spec.indent_spaces = current_li.spec.indent_spaces - deindent_amount
 
 				local current_ispec = ispec_array[row1]
 				for _, ilspec in ipairs(current_ispec) do
@@ -222,13 +222,13 @@ function M.apply_unindent(li_array, ispec_array, start_row, end_row, rel_cursor_
 
 			if #current_ispec == 0 then
 				assert(
-					current_li.indent_spaces == 0,
+					current_li.spec.indent_spaces == 0,
 					"The case of hyperindented list blocks should be handled in the special case block at the beginning"
 				)
-				current_li.indent_spaces = -1
+				current_li.spec.indent_spaces = -1
 			else
-				current_li.indent_spaces = current_ispec[#current_ispec].indent_spaces
-				current_li.is_ordered = current_ispec[#current_ispec].is_ordered
+				current_li.spec.indent_spaces = current_ispec[#current_ispec].indent_spaces
+				current_li.spec.is_ordered = current_ispec[#current_ispec].is_ordered
 			end
 
 			if
