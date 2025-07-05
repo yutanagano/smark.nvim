@@ -49,7 +49,7 @@ function smark_private.callback_insert_newline()
 	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
 	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function smark_private.callback_insert_indent()
@@ -74,7 +74,7 @@ function smark_private.callback_insert_indent()
 	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
 	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function smark_private.callback_insert_unindent()
@@ -99,7 +99,7 @@ function smark_private.callback_insert_unindent()
 	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
 	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function smark_private.callback_normal_indent()
@@ -203,7 +203,7 @@ function smark_private.callback_normal_o()
 	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
 
 	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
-	vim.api.nvim_win_set_cursor(0, { cursor_coords.row1, cursor_coords.col0 })
+	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 	vim.cmd("startinsert!")
 end
 
@@ -362,9 +362,9 @@ end
 ---@return string[] # Array of strings representing the original block content, line by line
 ---@return integer preamble_len The original number of characters before the content begins at the current line
 function smark_private.get_list_block_around_cursor()
-	local cursor_row1, cursor_col0 = table.unpack(vim.api.nvim_win_get_cursor(0))
-	local cursor_coords = { row1 = cursor_row1, col0 = cursor_col0 }
-	local li, li_bounds, raw_lines, preamble_len = list_item.scan_text_around_line(cursor_coords.row1)
+	local cursor_row, cursor_col = table.unpack(vim.api.nvim_win_get_cursor(0))
+	local cursor_coords = { row = cursor_row, col = cursor_col }
+	local li, li_bounds, raw_lines, preamble_len = list_item.scan_text_around_line(cursor_coords.row)
 
 	if li == nil then
 		return cursor_coords, nil, {}, {}, 0

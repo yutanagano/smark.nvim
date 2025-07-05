@@ -7,8 +7,8 @@ local M = {}
 ---@param li_array_bounds TextBlockBounds bounds of list block
 ---@return LiCursorCoords
 function M.to_li_cursor_coords(cursor_coords, li_array, li_array_bounds)
-	local li_index, content_lnum = M.make_relative_to_containing_li(cursor_coords.row1, li_array, li_array_bounds)
-	return { list_index = li_index, content_lnum = content_lnum, col = cursor_coords.col0 }
+	local li_index, content_lnum = M.make_relative_to_containing_li(cursor_coords.row, li_array, li_array_bounds)
+	return { list_index = li_index, content_lnum = content_lnum, col = cursor_coords.col }
 end
 
 ---Compute the index for the list element that occupies the given line number, as well as the line number relative to that list item's content that it corresponds to.
@@ -60,8 +60,8 @@ function M.to_absolute_cursor_coords(li_cursor_coords, li_array, li_array_bounds
 	end
 
 	return {
-		row1 = li_array_bounds.upper + offset - 1,
-		col0 = li_cursor_coords.col,
+		row = li_array_bounds.upper + offset - 1,
+		col = li_cursor_coords.col,
 	}
 end
 

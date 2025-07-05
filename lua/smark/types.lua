@@ -16,8 +16,8 @@
 ---@field indent_spaces integer
 
 ---@class CursorCoords
----@field row1 integer 1-indexed row number of cursor
----@field col0 integer 0-indexed column number of cursor
+---@field row integer 1-indexed row number of cursor
+---@field col integer 0-indexed column number of cursor
 
 ---@class LiCursorCoords
 ---@field list_index integer index of list item that the cursor is inside

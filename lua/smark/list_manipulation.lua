@@ -322,8 +322,8 @@ function M.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
 
 	format.fix_numbering(li_array, ispec_array)
 
-	for row1 = upper_bound + 1, lower_bound do
-		format.update_indent_specs(li_array, ispec_array, row1)
+	for index = upper_bound + 1, lower_bound do
+		format.update_indent_specs(li_array, ispec_array, index)
 	end
 end
 
