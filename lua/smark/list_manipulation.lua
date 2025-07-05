@@ -1,4 +1,5 @@
 require("smark.types")
+
 local list_item = require("smark.list_item")
 local format = require("smark.format")
 
