@@ -1,3 +1,11 @@
+## Version 0.4
+
+- [ ] Add method to toggle task list:
+  - [ ] For normal mode
+  - [ ] For visual mode
+- [ ] Make it so that when adding a new line (using <CR> or o) inside of a task list block, make sure the parent level item becomes marked as incomplete (because there is now at least one child that is incomplete)
+- [ ] Make it so that when list elements are fully outdented (they are no longer list elements), empty lines are added in the spaces between any adjacent list elements and normal paragraph lines
+
 ## Version 0.3
 
 - [x] Add method to toggle list ordered types:
@@ -15,11 +23,8 @@
   - [x] Make sure normal o is working
   - [x] Make sure in/outdent keybinds are working
   - [x] Make sure list formatting / numbering / ticking shortcuts are working
-- [ ] Make it so that when adding a new line (using <CR> or o) inside of a task list block, make sure the parent level item becomes marked as incomplete (because there is now at least one child that is incomplete)
-- [ ] Make it so that when list elements are fully outdented (they are no longer list elements), empty lines are added in the spaces between any adjacent list elements and normal paragraph lines
 - [ ] Clean up variable / field names
 - [ ] Clean up unwieldy loops
-- [ ] Handle insertion with "O"
 
 ## Version 0.2
 
