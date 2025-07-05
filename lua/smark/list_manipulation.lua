@@ -225,53 +225,43 @@ function M.apply_unindent(li_array, ispec_array, start_index, end_index, li_curs
 		end
 	end
 
-	local original_end_row_ilevel = #ispec_array[end_index]
-	local subtree_traversed = false
-
+	local original_end_index_ilevel = #ispec_array[end_index]
 	for i = start_index, #li_array do
 		local current_li = li_array[i]
 		local current_ispec = ispec_array[i]
 
+		if i > end_index and #current_ispec <= math.max(1, original_end_index_ilevel) then
+			break
+		end
+
+		local original_preamble_len = list_item.get_preamble_length(current_li)
+
+		table.remove(current_ispec)
 		if #current_ispec == 0 then
-			return
-		end
-
-		if i > start_index then
-			format.update_indent_specs(li_array, ispec_array, i)
-		end
-
-		if i <= end_index or (not subtree_traversed and #current_ispec > original_end_row_ilevel) then
-			local original_preamble_len = list_item.get_preamble_length(current_li)
-			table.remove(current_ispec)
-
-			if #current_ispec == 0 then
-				assert(
-					current_li.spec.indent_spaces == 0,
-					"The case of hyperindented list blocks should be handled in the special case block at the beginning"
-				)
-				current_li.spec.indent_spaces = -1
-			else
-				current_li.spec.indent_spaces = current_ispec[#current_ispec].indent_spaces
-				current_li.spec.is_ordered = current_ispec[#current_ispec].is_ordered
-			end
-
-			if
-				li_cursor_coords ~= nil
-				and li_cursor_coords.list_index == i
-				and li_cursor_coords.col >= original_preamble_len
-			then
-				li_cursor_coords.col = math.max(
-					0,
-					li_cursor_coords.col + list_item.get_preamble_length(current_li) - original_preamble_len
-				)
-			end
-
-			format.fix_numbering(li_array, ispec_array, li_cursor_coords)
+			assert(
+				current_li.spec.indent_spaces <= 0,
+				"The case of hyperindented list blocks should be handled in the special case block at the beginning"
+			)
+			current_li.spec.indent_spaces = -1
 		else
-			if not subtree_traversed then
-				subtree_traversed = true
-			end
+			current_li.spec.indent_spaces = current_ispec[#current_ispec].indent_spaces
+			current_li.spec.is_ordered = current_ispec[#current_ispec].is_ordered
 		end
+
+		if
+			li_cursor_coords ~= nil
+			and li_cursor_coords.list_index == i
+			and li_cursor_coords.col >= original_preamble_len
+		then
+			li_cursor_coords.col =
+				math.max(0, li_cursor_coords.col + list_item.get_preamble_length(current_li) - original_preamble_len)
+		end
+	end
+
+	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
+
+	for i = start_index + 1, #li_array do
+		format.update_indent_specs(li_array, ispec_array, i)
 	end
 end
 

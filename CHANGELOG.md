@@ -5,6 +5,9 @@
 - [ ] Add plenary tests
 - [ ] Make it so that when adding a new line (using <CR> or o) inside of a task list block, make sure the parent level item becomes marked as incomplete (because there is now at least one child that is incomplete)
 - [ ] Make it so that when list elements are fully outdented (they are no longer list elements), empty lines are added in the spaces between any adjacent list elements and normal paragraph lines
+- [ ] Implement configuration options:
+  - [ ] Auto-numbering
+  - [ ] List type on indenting
 
 ## Version 0.3
 
