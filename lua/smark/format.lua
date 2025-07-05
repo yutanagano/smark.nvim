@@ -136,33 +136,106 @@ function M.fix_numbering(li_array, ispec_array, li_cursor_coords)
 	end
 end
 
+---@param li_array ListItem[]
+---@param ispec_array indent_spec[]
+---@param start_index integer
+---@param end_index integer
+---@param li_cursor_coords? LiCursorCoords
+function M.propagate_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+	assert(start_index > 1, "ordered type propagation cannot be done for root")
+
+	local lookbehind_ispec = ispec_array[start_index - 1]
+	local lookahead_ispec = ispec_array[end_index + 1]
+
+	local template_ispec = M.get_indent_spec_like(lookbehind_ispec)
+	if lookahead_ispec ~= nil and #lookahead_ispec > #template_ispec then
+		for i = #template_ispec + 1, #lookahead_ispec do
+			template_ispec[i] = {
+				is_ordered = lookahead_ispec[i].is_ordered,
+				indent_spaces = lookahead_ispec[i].indent_spaces,
+			}
+		end
+	end
+
+	for li_index = start_index, end_index do
+		local li = li_array[li_index]
+		local ispec = ispec_array[li_index]
+		local ilevel = #ispec
+		local original_preamble_len
+
+		if li_cursor_coords ~= nil and li_index == li_cursor_coords.list_index then
+			original_preamble_len = list_item.get_preamble_length(li)
+		end
+
+		for ilevel_index = 1, ilevel do
+			if template_ispec[ilevel_index] == nil then
+				template_ispec[ilevel_index] = {
+					is_ordered = false,
+					indent_spaces = 0, -- placeholder
+				}
+			end
+
+			ispec[ilevel_index].is_ordered = template_ispec[ilevel_index].is_ordered
+
+			if ilevel_index == ilevel then
+				li.spec.is_ordered = template_ispec[ilevel_index].is_ordered
+			end
+		end
+
+		if
+			li_cursor_coords ~= nil
+			and li_index == li_cursor_coords.list_index
+			and li_cursor_coords.col >= original_preamble_len
+		then
+			li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
+		end
+	end
+end
+
 ---Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
 ---The update is done by revising the indent spec of a particular item based on the one directly preceding it.
 ---This is useful if any edits to part of the list block have caused re-numberings and subsequent changes to indentation specs downstream.
 ---@param li_array ListItem[]
 ---@param ispec_array indent_spec[]
----@param line_num 1-indexed position of list item to update indentation for. Must be greater than 1.
-function M.update_indent_specs(li_array, ispec_array, line_num)
-	local current_li = li_array[line_num]
-	local current_ispec = ispec_array[line_num]
-	local current_ilevel = #current_ispec
+---@param start_index integer
+---@param end_index integer
+---@param li_cursor_coords? LiCursorCoords
+function M.propagate_indent_specs(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+	for li_index = start_index, end_index do
+		local current_li = li_array[li_index]
+		local current_ispec = ispec_array[li_index]
+		local current_ilevel = #current_ispec
 
-	if current_ilevel == 0 then
-		return
-	end
+		if current_ilevel > 0 then
+			local lookbehind_li = li_array[li_index - 1]
+			local lookbehind_ispec = ispec_array[li_index - 1]
+			local original_preamble_len
 
-	local lookbehind_li = li_array[line_num - 1]
-	local lookbehind_ispec = ispec_array[line_num - 1]
+			if li_cursor_coords ~= nil and li_index == li_cursor_coords.list_index then
+				original_preamble_len = list_item.get_preamble_length(current_li)
+			end
 
-	for i = 1, current_ilevel do
-		if lookbehind_ispec[i] ~= nil then
-			current_ispec[i].indent_spaces = lookbehind_ispec[i].indent_spaces
-		else
-			current_ispec[i].indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
+			for ilevel_index = 1, current_ilevel do
+				if lookbehind_ispec[ilevel_index] ~= nil then
+					current_ispec[ilevel_index].indent_spaces = lookbehind_ispec[ilevel_index].indent_spaces
+				else
+					current_ispec[ilevel_index].indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
+				end
+			end
+
+			current_li.spec.indent_spaces = current_ispec[current_ilevel].indent_spaces
+
+			if
+				li_cursor_coords ~= nil
+				and li_index == li_cursor_coords.list_index
+				and li_cursor_coords.col >= original_preamble_len
+			then
+				li_cursor_coords.col = li_cursor_coords.col
+					+ list_item.get_preamble_length(current_li)
+					- original_preamble_len
+			end
 		end
 	end
-
-	current_li.spec.indent_spaces = current_ispec[current_ilevel].indent_spaces
 end
 
 ---@param ispec indent_spec
