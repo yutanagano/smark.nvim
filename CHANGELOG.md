@@ -25,6 +25,7 @@
   - [x] Make sure list formatting / numbering / ticking shortcuts are working
 - [ ] Clean up variable / field names
 - [ ] Clean up unwieldy loops
+- [ ] Add plenary tests
 
 ## Version 0.2
 
