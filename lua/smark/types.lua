@@ -1,19 +1,13 @@
 ---@class ListItem
----@field spec ListSpec List item characteristics necessary to properly render it.
----@field content string[] The text content of the list item. Each string in the array will be rendered on a new line.
-
----@class ListSpec
----@field is_ordered boolean
+---@field indent_rules IndentRule[] Specs for each indentation level up until the current one.
 ---@field is_task boolean
 ---@field is_completed boolean True if task which is marked completed.
----@field index integer The item index number.
----@field indent_spaces integer The indentation level of the line in number of spaces. -1 results in a line with no list marker element.
+---@field index integer The number of the list item (relevant if ordered list).
+---@field content string[] The text content of the list item. Each string in the array will be rendered on a new line.
 
----@alias indent_spec IndentLevelSpec[] Integer array describing the number of indent spaces required to align to each level, up to current
-
----@class IndentLevelSpec
+---@class IndentRule
 ---@field is_ordered boolean
----@field indent_spaces integer
+---@field num_spaces integer
 
 ---@class CursorCoords
 ---@field row integer 1-indexed row number of cursor
