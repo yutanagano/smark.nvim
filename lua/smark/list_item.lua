@@ -111,43 +111,43 @@ end
 ---@param read_time_preamble_len integer
 ---@return string[] content_after_cursor The portion of li's content that lies after the cursor
 function M.get_content_after_cursor(li, li_cursor_coords, read_time_preamble_len)
-	local content_after_cursor = { table.unpack(li.content, li_cursor_coords.content_lnum, #li.content) }
+	local content_after_cursor = { table.unpack(li.content, li_cursor_coords.content_lnum + 1, #li.content) }
 
-	if li_cursor_coords.col <= read_time_preamble_len then
-		return content_after_cursor
+	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
+	if li_cursor_coords.col > read_time_preamble_len then
+		local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len + 1
+		content_on_cursor_line = string.sub(content_on_cursor_line, col_relative_to_content)
 	end
 
-	local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len + 1
-	local on_cursor_line = string.sub(content_after_cursor[1], col_relative_to_content)
+	if content_on_cursor_line ~= "" then
+		table.insert(content_after_cursor, 1, content_on_cursor_line)
+	end
 
-	if on_cursor_line == "" then
-		table.remove(content_after_cursor, 1)
-	else
-		content_after_cursor[1] = on_cursor_line
+	if #content_after_cursor == 0 then
+		content_after_cursor = { "" }
 	end
 
 	return content_after_cursor
 end
 
----Modify a list item's content string, truncating any content to the right of the cursor.
+---Modify a list item's contents, truncating any content that lies after the cursor.
 ---@param li ListItem
----@param read_time_preamble_len integer
 ---@param li_cursor_coords LiCursorCoords
-function M.truncate_content_at_cursor(li, read_time_preamble_len, li_cursor_coords)
+---@param read_time_preamble_len integer
+function M.truncate_content_at_cursor(li, li_cursor_coords, read_time_preamble_len)
 	local content_before_cursor = { table.unpack(li.content, 1, li_cursor_coords.content_lnum - 1) }
-	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
 
-	if li_cursor_coords.col <= read_time_preamble_len then
-		if #content_before_cursor == 0 then
-			content_before_cursor = { "" }
-		end
-		li.content = content_before_cursor
-		return
+	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
+	if li_cursor_coords.col > read_time_preamble_len then
+		local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len
+		content_on_cursor_line = string.sub(content_on_cursor_line, 1, col_relative_to_content)
+		table.insert(content_before_cursor, content_on_cursor_line)
 	end
 
-	local relative_cutoff = li_cursor_coords.col - read_time_preamble_len
-	content_on_cursor_line = string.sub(content_on_cursor_line, 1, relative_cutoff)
-	table.insert(content_before_cursor, content_on_cursor_line)
+	if #content_before_cursor == 0 then
+		content_before_cursor = { "" }
+	end
+
 	li.content = content_before_cursor
 end
 
