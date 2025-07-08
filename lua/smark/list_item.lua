@@ -106,20 +106,25 @@ function M.get_empty_like(li)
 	}
 end
 
----Return the content string that lies to the right of the cursor.
 ---@param li ListItem
----@param read_time_preamble_len integer
 ---@param li_cursor_coords LiCursorCoords
----@return string[]
-function M.get_content_after_cursor(li, read_time_preamble_len, li_cursor_coords)
+---@param read_time_preamble_len integer
+---@return string[] content_after_cursor The portion of li's content that lies after the cursor
+function M.get_content_after_cursor(li, li_cursor_coords, read_time_preamble_len)
 	local content_after_cursor = { table.unpack(li.content, li_cursor_coords.content_lnum, #li.content) }
 
 	if li_cursor_coords.col <= read_time_preamble_len then
 		return content_after_cursor
 	end
 
-	local relative_col = li_cursor_coords.col - read_time_preamble_len + 1
-	content_after_cursor[1] = string.sub(content_after_cursor[1], relative_col)
+	local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len + 1
+	local on_cursor_line = string.sub(content_after_cursor[1], col_relative_to_content)
+
+	if on_cursor_line == "" then
+		table.remove(content_after_cursor, 1)
+	else
+		content_after_cursor[1] = on_cursor_line
+	end
 
 	return content_after_cursor
 end
