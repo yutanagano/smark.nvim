@@ -126,49 +126,38 @@ function M.fix_numbering(li_block, li_cursor_coords)
 	end
 end
 
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Infers what the is_ordered status should be for all the list items within
+---the specified range. is_ordered types for as many indent levels as possible
+---are first inferred from the list item immediately preceding the range. If
+---the list item immediately following the range has further indent level
+---specified, then inferences for the is_ordered status for those levels are
+---propagated backwards.
+---
+---@param li_block ListItem[]
 ---@param start_index integer
 ---@param end_index integer
 ---@param li_cursor_coords? LiCursorCoords
-function M.propagate_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+function M.propagate_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	assert(start_index > 1, "ordered type propagation cannot be done for root")
 
-	local lookbehind_ispec = ispec_array[start_index - 1]
-	local lookahead_ispec = ispec_array[end_index + 1]
-
-	local template_ispec = M.get_indent_spec_like(lookbehind_ispec)
-	if lookahead_ispec ~= nil and #lookahead_ispec > #template_ispec then
-		for i = #template_ispec + 1, #lookahead_ispec do
-			template_ispec[i] = {
-				is_ordered = lookahead_ispec[i].is_ordered,
-				indent_spaces = lookahead_ispec[i].indent_spaces,
-			}
-		end
-	end
+	local lookbehind_li = li_block[start_index - 1]
+	local lookahead_li = li_block[end_index + 1]
 
 	for li_index = start_index, end_index do
-		local li = li_array[li_index]
-		local ispec = ispec_array[li_index]
-		local ilevel = #ispec
+		local current_li = li_block[li_index]
 		local original_preamble_len
 
 		if li_cursor_coords ~= nil and li_index == li_cursor_coords.list_index then
-			original_preamble_len = list_item.get_preamble_length(li)
+			original_preamble_len = list_item.get_preamble_length(current_li)
 		end
 
-		for ilevel_index = 1, ilevel do
-			if template_ispec[ilevel_index] == nil then
-				template_ispec[ilevel_index] = {
-					is_ordered = false,
-					indent_spaces = 0, -- placeholder
-				}
-			end
-
-			ispec[ilevel_index].is_ordered = template_ispec[ilevel_index].is_ordered
-
-			if ilevel_index == ilevel then
-				li.spec.is_ordered = template_ispec[ilevel_index].is_ordered
+		for ilevel_index = 1, #current_li.indent_rules do
+			if lookbehind_li.indent_rules[ilevel_index] ~= nil then
+				current_li.indent_rules[ilevel_index].is_ordered = lookbehind_li.indent_rules[ilevel_index].is_ordered
+			elseif lookahead_li ~= nil and lookahead_li.indent_rules[ilevel_index] ~= nil then
+				current_li.indent_rules[ilevel_index].is_ordered = lookahead_li.indent_rules[ilevel_index].is_ordered
+			else
+				current_li.indent_rules[ilevel_index].is_ordered = false
 			end
 		end
 
@@ -177,7 +166,9 @@ function M.propagate_ordered_type(li_array, ispec_array, start_index, end_index,
 			and li_index == li_cursor_coords.list_index
 			and li_cursor_coords.col >= original_preamble_len
 		then
-			li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
+			li_cursor_coords.col = li_cursor_coords.col
+				+ list_item.get_preamble_length(current_li)
+				- original_preamble_len
 		end
 	end
 end
@@ -193,7 +184,7 @@ end
 ---@param start_index integer
 ---@param end_index integer
 ---@param li_cursor_coords? LiCursorCoords
-function M.propagate_indent_specs(li_block, start_index, end_index, li_cursor_coords)
+function M.propagate_indent_rules(li_block, start_index, end_index, li_cursor_coords)
 	for li_index = start_index, end_index do
 		local current_li = li_block[li_index]
 		local current_ilevel = #current_li.indent_rules

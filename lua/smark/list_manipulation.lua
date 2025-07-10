@@ -35,7 +35,7 @@ function M.apply_insert_newline(li_block, li_cursor_coords)
 	end
 
 	format.fix_numbering(li_block, li_cursor_coords)
-	format.propagate_indent_specs(li_block, li_cursor_coords.list_index, #li_block, li_cursor_coords)
+	format.propagate_indent_rules(li_block, li_cursor_coords.list_index, #li_block, li_cursor_coords)
 
 	if list_item.content_ends_in_colon(current_li) and list_item.content_is_empty(new_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
@@ -72,7 +72,7 @@ function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
 	li_cursor_coords.col = list_item.get_preamble_length(new_li)
 
 	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	format.propagate_indent_specs(li_array, ispec_array, li_cursor_coords.list_index + 1, #li_array, li_cursor_coords)
+	format.propagate_indent_rules(li_array, ispec_array, li_cursor_coords.list_index + 1, #li_array, li_cursor_coords)
 
 	if list_item.content_ends_in_colon(current_li) then
 		M.apply_indent(
@@ -85,32 +85,31 @@ function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
 	end
 end
 
----Edit li_array, ispec_array and li_cursor_coords (if supplied) in place to reflect indenting one level the rows from start_row to end_row inclusive.
----If the first item to be has no siblings above it, it will result in a no-op.
----The one exception to this is the root (first row) of an indent block, where the entire block will be indented.
----Only call this function after first fixing format.
----Ensure that start_row and end_row are within bounds of the list block, otherwise this can cause undefined behaviour.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Edit li_block and li_cursor_coords (if supplied) in place to reflect
+---indenting one level the list items from start_index to end_index inclusive.
+---If the first item to be indented has no siblings above it, it will result in
+---a no-op. The one exception to this is the root (first row) of an indent
+---block, where the entire block will be indented. Only call this function
+---after first fixing format. Ensure that start_index and end_index are within
+---bounds of the list block, otherwise this can cause undefined behaviour.
+---
+---@param li_block ListItem[]
 ---@param start_index integer index of first list item to unindent
 ---@param end_index integer index of last list item to indent
 ---@param li_cursor_coords? LiCursorCoords
-function M.apply_indent(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+function M.apply_indent(li_block, start_index, end_index, li_cursor_coords)
 	if start_index == 1 then
-		for i = 1, #li_array do
-			local current_li = li_array[i]
+		for li_index = 1, #li_block do
+			local current_li = li_block[li_index]
 			local original_preamble_len = list_item.get_preamble_length(current_li)
 
-			current_li.spec.indent_spaces = current_li.spec.indent_spaces + 2
-
-			local current_ispec = ispec_array[i]
-			for _, ilspec in ipairs(current_ispec) do
-				ilspec.indent_spaces = ilspec.indent_spaces + 2
+			for _, irule in ipairs(current_li.indent_rules) do
+				irule.num_spaces = irule.num_spaces + 2
 			end
 
 			if
 				li_cursor_coords ~= nil
-				and li_cursor_coords.list_index == i
+				and li_cursor_coords.list_index == li_index
 				and li_cursor_coords.col >= original_preamble_len
 			then
 				li_cursor_coords.col = li_cursor_coords.col + 2
@@ -119,85 +118,74 @@ function M.apply_indent(li_array, ispec_array, start_index, end_index, li_cursor
 		return
 	end
 
-	for i = start_index, end_index do
-		local current_ispec = ispec_array[i]
-		local current_ilevel = #current_ispec
-
-		if current_ilevel > #ispec_array[i - 1] then
+	for li_index = start_index, end_index do
+		if li_index == start_index and #li_block[li_index].indent_rules > #li_block[li_index - 1].indent_rules then
 			return
 		end
 
-		table.insert(current_ispec, {
+		table.insert(li_block[li_index].indent_rules, {
 			is_ordered = nil, -- to be inferred later
-			indent_spaces = nil, -- to be inferred later
+			num_spaces = li_block[li_index].indent_rules[#li_block[li_index].indent_rules].num_spaces, -- to be inferred later
 		})
 	end
 
-	format.propagate_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
-	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	format.propagate_indent_specs(li_array, ispec_array, start_index, #li_array, li_cursor_coords)
+	format.propagate_ordered_type(li_block, start_index, end_index, li_cursor_coords)
+	format.fix_numbering(li_block, li_cursor_coords)
+	format.propagate_indent_rules(li_block, start_index, #li_block, li_cursor_coords)
 end
 
----Edit li_array, ispec_array and li_cursor_coords in place to reflect unindenting one level the rows from start_row to end_row inclusive.
----Only call this function after first fixing format.
----Ensure that start_row and end_row are within bounds of the list block, otherwise this can cause undefined behaviour.
----Special case: if the root list item is already indented (there are a positive number of spaces preceding the first bullet), and the selection to unindent contains a bullet at the root level, then the whole list block is unindented.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Edit li_block and li_cursor_coords (if supplied) in place to reflect
+---unindenting one level the list items from start_index to end_index
+---inclusive. Only call this function after first fixing format. Ensure that
+---start_index and end_index are within bounds of the list block, otherwise
+---this can cause undefined behaviour.
+---
+---Special case: if the root list item is already indented (there are a
+---positive number of spaces preceding the first bullet), and the selection to
+---unindent contains a bullet at the root level, then the whole list block is
+---unindented.
+---
+---@param li_block ListItem[]
 ---@param start_index integer 1-indexed number of first line to unindent
 ---@param end_index integer 1-indexed number of last line to indent
 ---@param li_cursor_coords? LiCursorCoords
-function M.apply_unindent(li_array, ispec_array, start_index, end_index, li_cursor_coords)
-	local root_indent_spaces = li_array[1].spec.indent_spaces
+function M.apply_unindent(li_block, start_index, end_index, li_cursor_coords)
+	local root_num_spaces = li_block[1].indent_rules[#li_block[1].indent_rules].num_spaces
 
-	if root_indent_spaces > 0 then
+	if root_num_spaces > 0 then
 		local min_ilevel_in_selection
-		for i = start_index, end_index do
-			local current_ispaces = li_array[i].spec.indent_spaces
+		for li_index = start_index, end_index do
+			local current_ispaces = li_block[li_index].indent_rules[#li_block[li_index].indent_rules].num_spaces
 			if min_ilevel_in_selection == nil or current_ispaces < min_ilevel_in_selection then
 				min_ilevel_in_selection = current_ispaces
 			end
 		end
 
-		if min_ilevel_in_selection == root_indent_spaces then
-			local deindent_amount = math.min(2, root_indent_spaces)
-			for i = 1, #li_array do
-				local current_li = li_array[i]
-				current_li.spec.indent_spaces = current_li.spec.indent_spaces - deindent_amount
-
-				local current_ispec = ispec_array[i]
-				for _, ilspec in ipairs(current_ispec) do
-					ilspec.indent_spaces = ilspec.indent_spaces - deindent_amount
+		if min_ilevel_in_selection == root_num_spaces then
+			local deindent_amount = math.min(2, root_num_spaces)
+			for li_index = 1, #li_block do
+				local current_li = li_block[li_index]
+				for _, irule in ipairs(current_li.indent_rules) do
+					irule.num_spaces = irule.num_spaces - deindent_amount
 				end
 			end
 			return
 		end
 	end
 
-	local original_end_index_ilevel = #ispec_array[end_index]
-	for i = start_index, #li_array do
-		local current_li = li_array[i]
-		local current_ispec = ispec_array[i]
+	local original_end_index_ilevel = #li_block[end_index].indent_rules
+	for li_index = start_index, #li_block do
+		local current_li = li_block[li_index]
 
-		if i > end_index and #current_ispec <= math.max(1, original_end_index_ilevel) then
+		if li_index > end_index and #current_li.indent_rules <= math.max(1, original_end_index_ilevel) then
 			break
 		end
 
-		table.remove(current_ispec)
-		if #current_ispec == 0 then
-			assert(
-				current_li.spec.indent_spaces <= 0,
-				"The case of hyperindented list blocks should be handled in the special case block at the beginning"
-			)
-			current_li.spec.indent_spaces = -1
-		else
-			current_li.spec.indent_spaces = current_ispec[#current_ispec].indent_spaces
-			current_li.spec.is_ordered = current_ispec[#current_ispec].is_ordered
-		end
+		table.remove(current_li.indent_rules)
 	end
 
-	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	format.propagate_indent_specs(li_array, ispec_array, start_index + 1, #li_array, li_cursor_coords)
+	format.fix_numbering(li_block, li_cursor_coords)
+	format.propagate_indent_rules(li_block, start_index + 1, #li_block, li_cursor_coords)
 end
 
 ---For a given region within a list block, toggle whether the list element type is ordered or unordered.
@@ -247,7 +235,7 @@ function M.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
 	end
 
 	format.fix_numbering(li_array, ispec_array)
-	format.propagate_indent_specs(li_array, ispec_array, upper_bound + 1, lower_bound)
+	format.propagate_indent_rules(li_array, ispec_array, upper_bound + 1, lower_bound)
 end
 
 ---For a given region within a list block, toggle whether the list element type is ordered or unordered.
@@ -284,7 +272,7 @@ function M.toggle_visual_ordered_type(li_array, ispec_array, start_index, end_in
 	end
 
 	format.fix_numbering(li_array, ispec_array)
-	format.propagate_indent_specs(li_array, ispec_array, start_index + 1, #li_array)
+	format.propagate_indent_rules(li_array, ispec_array, start_index + 1, #li_array)
 end
 
 ---For a given task list element, toggle wether the task is completed or not.
