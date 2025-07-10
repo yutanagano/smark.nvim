@@ -3,8 +3,12 @@
 - [ ] Clean up variable / field names
 - [ ] Clean up unwieldy loops
 - [ ] Add plenary tests
-- [ ] Make it so that when adding a new line (using <CR> or o) inside of a task list block, make sure the parent level item becomes marked as incomplete (because there is now at least one child that is incomplete)
-- [ ] Make it so that when list elements are fully outdented (they are no longer list elements), empty lines are added in the spaces between any adjacent list elements and normal paragraph lines
+- [ ] Make it so that when adding a new line (using <CR> or o) inside of a task
+      list block, make sure the parent level item becomes marked as incomplete
+      (because there is now at least one child that is incomplete)
+- [ ] Make it so that when list elements are fully outdented (they are no
+      longer list elements), empty lines are added in the spaces between any
+      adjacent list elements and normal paragraph lines
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
@@ -33,14 +37,19 @@
 ## Version 0.2
 
 - [x] Update only lines whose content change
-- [x] Fix bug of new incremental update system where line updates are out of sync if starting text is non-standard
+- [x] Fix bug of new incremental update system where line updates are out of
+      sync if starting text is non-standard
 - [x] Fix numbering bug when indenting mixed ordered and unordered lists
-- [x] Handle over-outdentation (in visual mode you can outdent an arbitrary number of times)
-- [x] Change behaviour of carriage return on empty lists to outdent one level instead of completely exiting the list
+- [x] Handle over-outdentation (in visual mode you can outdent an arbitrary
+      number of times)
+- [x] Change behaviour of carriage return on empty lists to outdent one level
+      instead of completely exiting the list
 - [x] Automatically detect ordered/unordered after ending bullet with colon
-- [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate formatting, numbering and indent fixes
+- [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally incorporate
+      formatting, numbering and indent fixes
 - [x] Bind format fixing routine by itself to a keymap
-- [x] Study and handle hyper-indented lists (root item already starts with positive indent spaces)
+- [x] Study and handle hyper-indented lists (root item already starts with
+      positive indent spaces)
 
 ## Version 0.1
 

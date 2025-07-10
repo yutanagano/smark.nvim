@@ -48,91 +48,74 @@ function smark_private.callback_insert_newline()
 end
 
 function smark_private.callback_insert_indent()
-	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
-		smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		local ctrl_t = vim.api.nvim_replace_termcodes("<C-t>", true, false, true)
 		vim.api.nvim_feedkeys(ctrl_t, "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
-	list_manipulation.apply_indent(
-		li_array,
-		ispec_array,
-		li_cursor_coords.list_index,
-		li_cursor_coords.list_index,
-		li_cursor_coords
-	)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 
-	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function smark_private.callback_insert_unindent()
-	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
-		smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		local ctrl_d = vim.api.nvim_replace_termcodes("<C-d>", true, false, true)
 		vim.api.nvim_feedkeys(ctrl_d, "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
 	list_manipulation.apply_unindent(
-		li_array,
-		ispec_array,
+		li_block,
 		li_cursor_coords.list_index,
 		li_cursor_coords.list_index,
 		li_cursor_coords
 	)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 
-	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function smark_private.callback_normal_indent()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		local indent = vim.api.nvim_replace_termcodes(string.format("%d>>", vim.v.count1), true, false, true)
 		vim.api.nvim_feedkeys(indent, "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
 	local start_index = li_cursor_coords.list_index
-	local end_index = math.min(#li_array, start_index + vim.v.count1 - 1)
-	local ispec_array = format.fix(li_array)
-	list_manipulation.apply_indent(li_array, ispec_array, start_index, end_index)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	local end_index = math.min(#li_block, start_index + vim.v.count1 - 1)
+	list_manipulation.apply_indent(li_block, start_index, end_index)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_unindent()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		local unindent = vim.api.nvim_replace_termcodes(string.format("%d<<", vim.v.count1), true, false, true)
 		vim.api.nvim_feedkeys(unindent, "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
 	local start_index = li_cursor_coords.list_index
-	local end_index = math.min(#li_array, start_index + vim.v.count1 - 1)
-	local ispec_array = format.fix(li_array)
-	list_manipulation.apply_unindent(li_array, ispec_array, start_index, end_index)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	local end_index = math.min(#li_block, start_index + vim.v.count1 - 1)
+	list_manipulation.apply_unindent(li_block, start_index, end_index)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_indentop()
-	local _, bounds = smark_private.get_list_block_around_cursor()
+	local bounds = smarkio.get_list_block_around_cursor()
 
 	if bounds == nil then
 		return ">"
@@ -143,7 +126,7 @@ function smark_private.callback_normal_indentop()
 end
 
 function smark_private.callback_normal_unindentop()
-	local _, bounds = smark_private.get_list_block_around_cursor()
+	local bounds = smarkio.get_list_block_around_cursor()
 
 	if bounds == nil then
 		return "<"
@@ -154,89 +137,77 @@ function smark_private.callback_normal_unindentop()
 end
 
 function smark.normal_indent_op()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	assert(bounds ~= nil, "op called outside of list block")
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
+	assert(li_block_bounds ~= nil, "op called outside of list block")
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
 	local start_row = vim.fn.getpos("'[")[2]
 	local end_row = vim.fn.getpos("']")[2]
-	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
-	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_block, li_block_bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_block, li_block_bounds)
 
-	local ispec_array = format.fix(li_array)
-	list_manipulation.apply_indent(li_array, ispec_array, start_index, end_index)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.apply_indent(li_block, start_index, end_index)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 end
 
 function smark.normal_unindent_op()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
-	assert(bounds ~= nil, "op called outside of list block")
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
+	assert(li_block_bounds ~= nil, "op called outside of list block")
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
 	local start_row = vim.fn.getpos("'[")[2]
 	local end_row = vim.fn.getpos("']")[2]
-	local start_index = cursor.make_relative_to_containing_li(start_row, li_array, bounds)
-	local end_index = cursor.make_relative_to_containing_li(end_row, li_array, bounds)
+	local start_index = cursor.make_relative_to_containing_li(start_row, li_block, li_block_bounds)
+	local end_index = cursor.make_relative_to_containing_li(end_row, li_block, li_block_bounds)
 
-	local ispec_array = format.fix(li_array)
-	list_manipulation.apply_unindent(li_array, ispec_array, start_index, end_index)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.apply_unindent(li_block, start_index, end_index)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 end
 
 function smark_private.callback_normal_o()
-	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
-		smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		vim.api.nvim_feedkeys("o", "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
-	list_manipulation.apply_normal_o(li_array, ispec_array, li_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.apply_normal_o(li_block, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 
-	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 	vim.cmd("startinsert!")
 end
 
 function smark_private.callback_normal_format()
-	local _, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		return
 	end
 
-	format.fix(li_array)
-	smark_private.draw_list_items(li_array, original_text, bounds)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds)
 end
 
 function smark_private.callback_normal_toggle_ordered()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords)
-	list_manipulation.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.toggle_normal_ordered_type(li_block, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds)
 end
 
 function smark_private.callback_normal_checkbox()
-	local cursor_coords, bounds, li_array, original_text = smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords)
-	list_manipulation.toggle_normal_checkbox(li_array, ispec_array, li_cursor_coords)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.toggle_normal_checkbox(li_block, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds)
 end
 
 function smark_private.callback_visual_indent()

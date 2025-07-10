@@ -42,19 +42,18 @@ function M.apply_insert_newline(li_block, li_cursor_coords)
 	end
 end
 
----Edit li_array, ispec_array and li_cursor_coords in place to reflect the entry of "o" in normal mode at the specified relative cursor coordinates.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Edit li_array and li_cursor_coords in place to reflect the entry of "o" in
+---normal mode at the specified relative cursor coordinates.
+---
+---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
-	local current_li = li_array[li_cursor_coords.list_index]
-	local current_ispec = ispec_array[li_cursor_coords.list_index]
+function M.apply_normal_o(li_block, li_cursor_coords)
+	local current_li = li_block[li_cursor_coords.list_index]
 
-	if li_cursor_coords.list_index == #li_array and list_item.content_is_empty(current_li) then
+	if li_cursor_coords.list_index == #li_block and list_item.content_is_empty(current_li) then
 		local new_li = list_item.get_empty_like(current_li)
-		new_li.spec.indent_spaces = -1
-		table.insert(li_array, new_li)
-		table.insert(ispec_array, {})
+		new_li.indent_rules = {}
+		table.insert(li_block, new_li)
 		li_cursor_coords.list_index = li_cursor_coords.list_index + 1
 		li_cursor_coords.content_lnum = 1
 		li_cursor_coords.col = 0
@@ -62,26 +61,17 @@ function M.apply_normal_o(li_array, ispec_array, li_cursor_coords)
 	end
 
 	local new_li = list_item.get_empty_like(current_li)
-	local new_ispec = format.get_indent_spec_like(current_ispec)
-
-	table.insert(li_array, li_cursor_coords.list_index + 1, new_li)
-	table.insert(ispec_array, li_cursor_coords.list_index + 1, new_ispec)
+	table.insert(li_block, li_cursor_coords.list_index + 1, new_li)
 
 	li_cursor_coords.list_index = li_cursor_coords.list_index + 1
 	li_cursor_coords.content_lnum = 1
 	li_cursor_coords.col = list_item.get_preamble_length(new_li)
 
-	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	format.propagate_indent_rules(li_array, ispec_array, li_cursor_coords.list_index + 1, #li_array, li_cursor_coords)
+	format.fix_numbering(li_block, li_cursor_coords)
+	format.propagate_indent_rules(li_block, li_cursor_coords.list_index + 1, #li_block, li_cursor_coords)
 
 	if list_item.content_ends_in_colon(current_li) then
-		M.apply_indent(
-			li_array,
-			ispec_array,
-			li_cursor_coords.list_index,
-			li_cursor_coords.list_index,
-			li_cursor_coords
-		)
+		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 	end
 end
 
@@ -188,54 +178,50 @@ function M.apply_unindent(li_block, start_index, end_index, li_cursor_coords)
 	format.propagate_indent_rules(li_block, start_index + 1, #li_block, li_cursor_coords)
 end
 
----For a given region within a list block, toggle whether the list element type is ordered or unordered.
----This edits li_array and ispec_array in place to reflect the changes.
----The ordered type is toggled for the list element which the cursor is on, as well as all its contiguous siblings (list elements that are at the same indent level, and that are all children of the same parent list element).
----Only call this function after first fixing format.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---For a given region within a list block, toggle whether the list element type
+---is ordered or unordered. This edits li_block in place to reflect the
+---changes. The ordered type is toggled for the list element which the cursor
+---is on, as well as all its contiguous siblings (list elements that are at the
+---same indent level, and that are all children of the same parent list
+---element). Only call this function after first fixing format.
+---
+---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_normal_ordered_type(li_array, ispec_array, li_cursor_coords)
-	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
-	local cursor_ilevel = #cursor_ispec
-	local cursor_ordered = cursor_ispec[cursor_ilevel].is_ordered
+function M.toggle_normal_ordered_type(li_block, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local cursor_ilevel = #cursor_li.indent_rules
+	local cursor_ordered = cursor_li.indent_rules[cursor_ilevel].is_ordered
 
-	local i = li_cursor_coords.list_index
-	local upper_bound_reached = false
-	local upper_bound = 1
-	while i >= 1 and not upper_bound_reached do
-		local current_ispec = ispec_array[i]
-		if #current_ispec < cursor_ilevel then
-			upper_bound_reached = true
-			upper_bound = i + 1
+	local upper_bound, lower_bound
+
+	for li_index = li_cursor_coords.list_index, 1, -1 do
+		local current_li = li_block[li_index]
+		if #current_li.indent_rules < cursor_ilevel then
+			upper_bound = li_index + 1
+			break
 		else
-			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
-			if #current_ispec == cursor_ilevel then
-				li_array[i].spec.is_ordered = not cursor_ordered
+			current_li.indent_rules[cursor_ilevel].is_ordered = not cursor_ordered
+			if li_index == 1 then
+				upper_bound = 1
 			end
 		end
-		i = i - 1
 	end
 
-	i = li_cursor_coords.list_index + 1
-	local lower_bound_reached = false
-	local lower_bound = #li_array
-	while i <= #li_array and not lower_bound_reached do
-		local current_ispec = ispec_array[i]
-		if #current_ispec < cursor_ilevel then
-			lower_bound_reached = true
-			lower_bound = i - 1
+	for li_index = li_cursor_coords.list_index + 1, #li_block do
+		local current_li = li_block[li_index]
+		if #current_li.indent_rules < cursor_ilevel then
+			lower_bound = li_index - 1
+			break
 		else
-			current_ispec[cursor_ilevel].is_ordered = not cursor_ordered
-			if #current_ispec == cursor_ilevel then
-				li_array[i].spec.is_ordered = not cursor_ordered
+			current_li.indent_rules[cursor_ilevel].is_ordered = not cursor_ordered
+			if li_index == #li_block then
+				lower_bound = #li_block
 			end
 		end
-		i = i + 1
 	end
 
-	format.fix_numbering(li_array, ispec_array)
-	format.propagate_indent_rules(li_array, ispec_array, upper_bound + 1, lower_bound)
+	format.fix_numbering(li_block)
+	format.propagate_indent_rules(li_block, upper_bound + 1, lower_bound)
 end
 
 ---For a given region within a list block, toggle whether the list element type is ordered or unordered.
@@ -276,35 +262,34 @@ function M.toggle_visual_ordered_type(li_array, ispec_array, start_index, end_in
 end
 
 ---For a given task list element, toggle wether the task is completed or not.
----This edits li_array and ispec_array in place to reflect the changes.
----The completion of the task list element that the cursor is on will be toggled.
----If the current list element also has any children that are also task list elements, they will also all be toggled to the same comletion status as well.
----Only call this function after first fixing format.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---This edits li_block in place to reflect the changes. The completion of the
+---task list element that the cursor is on will be toggled. If the current list
+---element also has any children that are also task list elements, they will
+---also all be toggled to the same comletion status as well. Only call this
+---function after first fixing format.
+---
+---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_normal_checkbox(li_array, ispec_array, li_cursor_coords)
-	local cursor_li = li_array[li_cursor_coords.list_index]
-	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
-	local cursor_ilevel = #cursor_ispec
+function M.toggle_normal_checkbox(li_block, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local cursor_ilevel = #cursor_li.indent_rules
+	local target_completion_status = not cursor_li.is_completed
 
-	if not cursor_li.spec.is_task then
+	if not cursor_li.is_task then
 		return
 	end
 
-	local toggle_to = not cursor_li.spec.is_completed
-	cursor_li.spec.is_completed = toggle_to
+	cursor_li.is_completed = target_completion_status
 
-	for i = li_cursor_coords.list_index + 1, #li_array do
-		local current_ispec = ispec_array[i]
+	for li_index = li_cursor_coords.list_index + 1, #li_block do
+		local child_li = li_block[li_index]
 
-		if #current_ispec <= cursor_ilevel then
+		if #child_li.indent_rules <= cursor_ilevel then
 			break
 		end
 
-		local child_li = li_array[i]
-		if child_li.spec.is_task then
-			child_li.spec.is_completed = toggle_to
+		if child_li.is_task then
+			child_li.is_completed = target_completion_status
 		end
 	end
 
@@ -315,57 +300,55 @@ function M.toggle_normal_checkbox(li_array, ispec_array, li_cursor_coords)
 	local parent
 	local incomplete_sibling_found = false
 
-	if toggle_to == false then
+	if target_completion_status == false then
 		incomplete_sibling_found = true
 	end
 
-	for i = li_cursor_coords.list_index - 1, 1, -1 do
-		local current_ispec = ispec_array[i]
-		local current_li = li_array[i]
+	for li_index = li_cursor_coords.list_index - 1, 1, -1 do
+		local current_li = li_block[li_index]
 
 		if
 			not incomplete_sibling_found
-			and #current_ispec == cursor_ilevel
-			and current_li.spec.is_task
-			and not current_li.spec.is_completed
+			and #current_li.indent_rules == cursor_ilevel
+			and current_li.is_task
+			and not current_li.is_completed
 		then
 			incomplete_sibling_found = true
 		end
 
-		if #current_ispec < cursor_ilevel then
+		if #current_li.indent_rules < cursor_ilevel then
 			parent = current_li
 			break
 		end
 	end
 
 	if incomplete_sibling_found then
-		parent.spec.is_completed = false
+		parent.is_completed = false
 		return
 	end
 
-	for i = li_cursor_coords.list_index + 1, #li_array do
-		local current_ispec = ispec_array[i]
-		local current_li = li_array[i]
+	for li_index = li_cursor_coords.list_index + 1, #li_block do
+		local current_li = li_block[li_index]
 
 		if
 			not incomplete_sibling_found
-			and #current_ispec == cursor_ilevel
-			and current_li.spec.is_task
-			and not current_li.spec.is_completed
+			and #current_li.indent_rules == cursor_ilevel
+			and current_li.is_task
+			and not current_li.is_completed
 		then
 			incomplete_sibling_found = true
 			break
 		end
 
-		if #current_ispec < cursor_ilevel then
+		if #current_li.indent_rules < cursor_ilevel then
 			break
 		end
 	end
 
 	if incomplete_sibling_found then
-		parent.spec.is_completed = false
+		parent.is_completed = false
 	else
-		parent.spec.is_completed = true
+		parent.is_completed = true
 	end
 end
 
