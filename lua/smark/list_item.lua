@@ -2,7 +2,7 @@
 ---@field indent_rules IndentRule[] Specs for each indentation level up until the current one.
 ---@field is_task boolean
 ---@field is_completed boolean True if task which is marked completed.
----@field index integer The number of the list item (relevant if ordered list).
+---@field position_number integer The number of the list item (relevant if ordered list).
 ---@field content string[] The text content of the list item. Each string in the array will be rendered on a new line.
 
 ---@class IndentRule
@@ -21,7 +21,7 @@ function M.get_preamble_length(li)
 	local marker_len, buffer_len
 
 	if li.indent_rules[#li.indent_rules].is_ordered then
-		marker_len = string.len(tostring(li.index)) + 1
+		marker_len = string.len(tostring(li.position_number)) + 1
 	else
 		marker_len = 1
 	end
@@ -55,7 +55,7 @@ function M.to_lines(li)
 	local marker, buffer
 
 	if li.indent_rules[#li.indent_rules].is_ordered then
-		marker = tostring(li.index) .. "."
+		marker = tostring(li.position_number) .. "."
 	else
 		marker = "-"
 	end
@@ -101,7 +101,7 @@ function M.get_empty_like(li)
 		indent_rules = indent_rules,
 		is_task = li.is_task,
 		is_completed = false,
-		index = 1,
+		position_number = 1,
 		content = { "" },
 	}
 end

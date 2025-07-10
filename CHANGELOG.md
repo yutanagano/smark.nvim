@@ -21,6 +21,7 @@
 - [ ] Add method to toggle task list:
   - [ ] For normal mode
   - [ ] For visual mode
+- [ ] Rename list item property index to position_number
 - [x] Handle multi-line bullets:
   - [x] Update list item schema to handle multi-line content
   - [x] Update code to scan document and generate list items

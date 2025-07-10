@@ -1,4 +1,11 @@
-require("smark.types")
+---@class CursorCoords
+---@field row integer 1-indexed row number of cursor
+---@field col integer 0-indexed column number of cursor
+
+---@class LiCursorCoords
+---@field list_index integer index of list item that the cursor is inside
+---@field content_lnum integer 1-indexed line number relative to the list item contents that the cursor is on
+---@field col 0-indexed column number of cursor
 
 local M = {}
 
@@ -11,8 +18,11 @@ function M.to_li_cursor_coords(cursor_coords, li_array, li_array_bounds)
 	return { list_index = li_index, content_lnum = content_lnum, col = cursor_coords.col }
 end
 
----Compute the index for the list element that occupies the given line number, as well as the line number relative to that list item's content that it corresponds to.
----Throws an error if the line number lies outside of the bounds.
+---Compute the index for the list element that occupies the given line number,
+---as well as the line number relative to that list item's content that it
+---corresponds to. Throws an error if the line number lies outside of the
+---bounds.
+---
 ---@param line_num integer 1-indexed line number
 ---@param li_array ListItem[]
 ---@param li_array_bounds TextBlockBounds bounds of list block

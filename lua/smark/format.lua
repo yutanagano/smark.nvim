@@ -1,92 +1,86 @@
-require("smark.types")
-
 local list_item = require("smark.list_item")
 
 local M = {}
 
----Mutate array of list items in place to enforce correct indentation and numbering.
----Optionally mutate cursor coordinates in place if supplied.
----Return a corresponding array of indent specs that describe the resulting correct indentation information.
----@param li_array ListItem[]
+---Mutate array of list items in place to enforce correct indentation and
+---numbering. Optionally mutate cursor coordinates in place if supplied. Note
+---that this function is called automatically whenever smark reads from the
+---current buffer and generates a lua table representation of the list block.
+---
+---@param li_block ListItem[]
 ---@param li_cursor_coords? LiCursorCoords
 ---@param original_preamble_len? integer The number of characters before content on the cursor line at read time. If not supplied, then is computed assuming that the list item had no extra whitespace characters before the content, which is not necessarily the case at read time.
----@return indent_spec[]
-function M.fix(li_array, li_cursor_coords, original_preamble_len)
-	local ispec_array = {}
+function M.fix(li_block, li_cursor_coords, original_preamble_len)
 	local index_counter = {}
-	local prev_original_indent_spaces
+	local prev_original_num_spaces
 
-	for i, li in ipairs(li_array) do
-		if li_cursor_coords ~= nil and li_cursor_coords.list_index == i and original_preamble_len == nil then
+	for li_index, li in ipairs(li_block) do
+		if li_cursor_coords ~= nil and li_cursor_coords.list_index == li_index and original_preamble_len == nil then
 			original_preamble_len = list_item.get_preamble_length(li)
 		end
 
-		if i == 1 then
-			li.spec.index = 1
-			ispec_array[1] = { { is_ordered = li.spec.is_ordered, indent_spaces = li.spec.indent_spaces } }
+		if li_index == 1 then
+			li.indent_rules = { li.indent_rules[#li.indent_rules] }
+			li.position_number = 1
 			index_counter[1] = 2
-			prev_original_indent_spaces = li.spec.indent_spaces
-		elseif li.spec.indent_spaces == -1 then
-			ispec_array[i] = {}
+			prev_original_num_spaces = li.indent_rules[1].num_spaces
+		elseif #li.indent_rules == 0 then
 			index_counter[1] = 1
-			prev_original_indent_spaces = nil
+			prev_original_num_spaces = nil
 		else
-			local prev_ispec = ispec_array[i - 1]
-			local prev_ilevel = #prev_ispec
-			local prev_nested_ispaces = list_item.get_nested_indent_spaces(li_array[i - 1])
-			local ispec = {}
-			local ispaces_set = false
+			local li_original_irules = li.indent_rules[#li.indent_rules]
+			local prev_li = li_block[li_index - 1]
+			local top_level_set = false
 
-			if li.spec.indent_spaces == prev_original_indent_spaces then
-				li.spec.indent_spaces = prev_ispec[prev_ilevel].indent_spaces
+			li.indent_rules = {}
+
+			if li_original_irules.num_spaces == prev_original_num_spaces then
+				li_original_irules.num_spaces = prev_li.indent_rules[#prev_li.indent_rules].num_spaces
 			else
-				prev_original_indent_spaces = li.spec.indent_spaces
+				prev_original_num_spaces = li_original_irules.num_spaces
 			end
 
-			if li.spec.indent_spaces >= prev_nested_ispaces then
-				li.spec.index = 1
-				li.spec.indent_spaces = prev_nested_ispaces
-
-				ispec[prev_ilevel + 1] = { is_ordered = li.spec.is_ordered, indent_spaces = prev_nested_ispaces }
-				index_counter[prev_ilevel + 1] = 2
-
-				ispaces_set = true
+			local prev_nested_ispaces = list_item.get_nested_indent_spaces(prev_li)
+			if li_original_irules.num_spaces >= prev_nested_ispaces then
+				li.indent_rules[#prev_li.indent_rules + 1] = {
+					is_ordered = li_original_irules.is_ordered,
+					num_spaces = prev_nested_ispaces,
+				}
+				li.position_number = 1
+				index_counter[#prev_li.indent_rules + 1] = 2
+				top_level_set = true
 			end
 
-			for ilevel = prev_ilevel, 1, -1 do
-				local is_ordered = prev_ispec[ilevel].is_ordered
-				local ispaces = prev_ispec[ilevel].indent_spaces
-				if li.spec.indent_spaces >= ispaces or (ilevel == 1 and li.spec.indent_spaces ~= -1) then
-					if not ispaces_set then
-						if is_ordered ~= li.spec.is_ordered then
+			for ilevel = #prev_li.indent_rules, 1, -1 do
+				local is_ordered = prev_li.indent_rules[ilevel].is_ordered
+				local num_spaces = prev_li.indent_rules[ilevel].num_spaces
+
+				if li_original_irules.num_spaces >= num_spaces or ilevel == 1 then
+					if not top_level_set then
+						if is_ordered ~= li_original_irules.is_ordered then
 							index_counter[ilevel] = 1
-							is_ordered = li.spec.is_ordered
+							is_ordered = li_original_irules.is_ordered
 						end
 
-						li.spec.index = index_counter[ilevel]
-						li.spec.indent_spaces = ispaces
-
+						li.position_number = index_counter[ilevel]
 						index_counter[ilevel] = index_counter[ilevel] + 1
 
-						ispaces_set = true
+						top_level_set = true
 					end
-					ispec[ilevel] = { is_ordered = is_ordered, indent_spaces = ispaces }
+
+					li.indent_rules[ilevel] = { is_ordered = is_ordered, num_spaces = num_spaces }
 				end
 			end
-
-			ispec_array[i] = ispec
 		end
 
 		if
 			li_cursor_coords ~= nil
-			and li_cursor_coords.list_index == i
+			and li_cursor_coords.list_index == li_index
 			and li_cursor_coords.col >= original_preamble_len
 		then
 			li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
 		end
 	end
-
-	return ispec_array
 end
 
 ---Only call this function _after_ fixing indentation, otherwise there will be undefined behaviour with respect to cursor position correction.
