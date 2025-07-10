@@ -38,11 +38,11 @@ end
 ---@param li ListItem
 ---@return integer ispaces The number of spaces required to be at the indent level corresponding to li's child
 function M.get_nested_indent_spaces(li)
-	if not li.is_task then
-		return M.get_preamble_length(li)
+	if li.is_task and #li.indent_rules > 0 then
+		return M.get_preamble_length(li) - 4 -- ignore the task marker element
 	end
 
-	return M.get_preamble_length(li) - 4 -- ignore the task marker element
+	return M.get_preamble_length(li)
 end
 
 ---@param li ListItem
