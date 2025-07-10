@@ -1,8 +1,5 @@
 ## Version 0.4
 
-- [ ] Clean up variable / field names
-- [ ] Clean up unwieldy loops
-- [ ] Add plenary tests
 - [ ] Make it so that when adding a new line (using <CR> or o) inside of a task
       list block, make sure the parent level item becomes marked as incomplete
       (because there is now at least one child that is incomplete)
@@ -12,6 +9,10 @@
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
+- [ ] Add method to toggle task list:
+  - [ ] For normal mode
+  - [ ] For visual mode
+- [ ] Add method to toggle between lists and standard paragraphs
 
 ## Version 0.3
 
@@ -22,9 +23,6 @@
   - [x] For normal mode:
     - [x] Make it so that ticking all children automatically ticks the parent
   - [x] For visual mode
-- [ ] Add method to toggle task list:
-  - [ ] For normal mode
-  - [ ] For visual mode
 - [x] Handle multi-line bullets:
   - [x] Update list item schema to handle multi-line content
   - [x] Update code to scan document and generate list items
@@ -33,6 +31,8 @@
   - [x] Make sure normal o is working
   - [x] Make sure in/outdent keybinds are working
   - [x] Make sure list formatting / numbering / ticking shortcuts are working
+- [ ] Add plenary tests
+- [ ] Add basic documentation
 
 ## Version 0.2
 
