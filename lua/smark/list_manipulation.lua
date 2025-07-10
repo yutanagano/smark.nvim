@@ -224,41 +224,42 @@ function M.toggle_normal_ordered_type(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, upper_bound + 1, lower_bound)
 end
 
----For a given region within a list block, toggle whether the list element type is ordered or unordered.
----This edits li_array and ispec_array in place to reflect the changes.
----The ordered type is toggled for the list elements between start_row and end_row.
----The type is toggled to the opposite type from that of the list element that is under the cursor.
----Only call this function after first fixing format.
----Ensure that start_row and end_row are within bounds.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---For a given region within a list block, toggle whether the list element type
+---is ordered or unordered. This edits li_block in place to reflect the
+---changes. The ordered type is toggled for the list elements between
+---start_index and end_index. The type is toggled to the opposite type from
+---that of the list element that is under the cursor. Only call this function
+---after first fixing format. Ensure that start_index and end_index are within
+---bounds.
+---
+---@param li_block ListItem[]
 ---@param start_index integer 1-indexed number of first line to unindent
 ---@param end_index integer 1-indexed number of last line to indent
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_visual_ordered_type(li_array, ispec_array, start_index, end_index, li_cursor_coords)
-	local cursor_ispec = ispec_array[li_cursor_coords.list_index]
-	local cursor_ordered = cursor_ispec[#cursor_ispec].is_ordered
+function M.toggle_visual_ordered_type(li_block, start_index, end_index, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local target_ordered_status = not cursor_li.indent_rules[#cursor_li.indent_rules].is_ordered
 
-	for i = start_index, end_index do
-		li_array[i].spec.is_ordered = not cursor_ordered
-		local current_ispec = ispec_array[i]
-		local current_ilevel = #current_ispec
-		current_ispec[current_ilevel].is_ordered = not cursor_ordered
+	for li_index = start_index, end_index do
+		local current_li = li_block[li_index]
+		local current_ilevel = #current_li.indent_rules
 
-		for subtree_row = i + 1, #li_array do
-			local subtree_ispec = ispec_array[subtree_row]
-			local subtree_ilevel = #subtree_ispec
+		current_li.indent_rules[current_ilevel].is_ordered = target_ordered_status
+
+		for subtree_index = li_index + 1, #li_block do
+			local subtree_li = li_block[subtree_index]
+			local subtree_ilevel = #subtree_li.indent_rules
 
 			if subtree_ilevel <= current_ilevel then
 				break
 			end
 
-			subtree_ispec[current_ilevel].is_ordered = not cursor_ordered
+			subtree_li.indent_rules[current_ilevel].is_ordered = target_ordered_status
 		end
 	end
 
-	format.fix_numbering(li_array, ispec_array)
-	format.propagate_indent_rules(li_array, ispec_array, start_index + 1, #li_array)
+	format.fix_numbering(li_block)
+	format.propagate_indent_rules(li_block, start_index + 1, #li_block)
 end
 
 ---For a given task list element, toggle wether the task is completed or not.
@@ -352,30 +353,26 @@ function M.toggle_normal_checkbox(li_block, li_cursor_coords)
 	end
 end
 
----For a given region within a list block containing task list elements, toggle whether they are marked as completed.
----This edits li_array and ispec_array in place to reflect the changes.
----The ordered type is toggled for the list elements between start_row and end_row.
----For any list elements in the range that are not of a checkbox type, this results in a no-op.
----The completion status is toggled to the opposite type from that of the list element that is under the cursor.
----Only call this function after first fixing format.
----Ensure that start_row and end_row are within bounds.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---For a given region within a list block containing task list elements, toggle
+---whether they are marked as completed. This edits li_block in place to
+---reflect the changes. The ordered type is toggled for the list elements
+---between start_index and end_index. For any list elements in the range that
+---are not of a checkbox type, this results in a no-op. The completion status
+---is toggled to the opposite type from that of the list element that is under
+---the cursor. Only call this function after first fixing format. Ensure that
+---start_index and end_index are within bounds.
+---
+---@param li_block ListItem[]
 ---@param start_row integer 1-indexed number of first line to unindent
 ---@param end_row integer 1-indexed number of last line to indent
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_visual_checkbox(li_array, ispec_array, start_row, end_row, li_cursor_coords)
-	local cursor_li = li_array[li_cursor_coords.list_index]
+function M.toggle_visual_checkbox(li_block, start_row, end_row, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local target_completion_status = not cursor_li.is_completed
 
-	local toggle_to = true
-	if cursor_li.spec.is_task then
-		toggle_to = not cursor_li.spec.is_completed
-	end
-
-	for i = start_row, end_row do
-		local current_li = li_array[i]
-		if current_li.spec.is_task then
-			current_li.spec.is_completed = toggle_to
+	for li_index = start_row, end_row do
+		if li_block[li_index].is_task then
+			li_block[li_index].is_completed = target_completion_status
 		end
 	end
 end
