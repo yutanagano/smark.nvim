@@ -200,9 +200,9 @@ end
 ---
 ---@param li_array ListItem[]
 ---@param read_time_lines string[] Array containing original text contents of list block
----@param bounds TextBlockBounds
+---@param li_block_bounds TextBlockBounds
 ---@param li_cursor_coords? LiCursorCoords
-function M.draw_list_items(li_array, read_time_lines, bounds, li_cursor_coords)
+function M.draw_list_items(li_array, read_time_lines, li_block_bounds, li_cursor_coords)
 	local write_time_lines = {}
 	for _, li in ipairs(li_array) do
 		local li_as_strings = list_item.to_lines(li)
@@ -213,7 +213,7 @@ function M.draw_list_items(li_array, read_time_lines, bounds, li_cursor_coords)
 
 	if #write_time_lines == #read_time_lines then
 		for i, s in ipairs(write_time_lines) do
-			local absolute_ln = bounds.upper + i - 1
+			local absolute_ln = li_block_bounds.upper + i - 1
 			if read_time_lines[i] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
@@ -224,7 +224,7 @@ function M.draw_list_items(li_array, read_time_lines, bounds, li_cursor_coords)
 	assert(li_cursor_coords ~= nil, "li_cursor_coords must be supplied if active changes have been made to the text")
 
 	for i, s in ipairs(write_time_lines) do
-		local absolute_ln = bounds.upper + i - 1
+		local absolute_ln = li_block_bounds.upper + i - 1
 
 		if i < li_cursor_coords.list_index then
 			if read_time_lines[i] ~= s then

@@ -1,62 +1,44 @@
-require("smark.types")
-
 local list_item = require("smark.list_item")
 local format = require("smark.format")
 
 local M = {}
 
----Edit li_array, ispec_array and rel_cursor_coords in place to reflect the entry of <CR> in insert mode at the specified relative cursor coordinates.
----Only call this function after fixing format.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Edit li_array, ispec_array and li_cursor_coords in place to reflect the
+---entry of <CR> in insert mode at the specified cursor coordinates. Only call
+---this function after fixing format.
+---
+---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
----@param read_time_preamble_len integer
-function M.apply_insert_newline(li_array, ispec_array, li_cursor_coords, read_time_preamble_len)
-	local current_li = li_array[li_cursor_coords.list_index]
-	local current_ispec = ispec_array[li_cursor_coords.list_index]
+function M.apply_insert_newline(li_block, li_cursor_coords)
+	local current_li = li_block[li_cursor_coords.list_index]
 
-	if li_cursor_coords.list_index == #li_array and list_item.content_is_empty(current_li) then
-		M.apply_unindent(
-			li_array,
-			ispec_array,
-			li_cursor_coords.list_index,
-			li_cursor_coords.list_index,
-			li_cursor_coords
-		)
+	if li_cursor_coords.list_index == #li_block and list_item.content_is_empty(current_li) then
+		M.apply_unindent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 		return
 	end
 
-	local content_after_cursor =
-		list_item.get_content_after_cursor(current_li, read_time_preamble_len, li_cursor_coords)
-	list_item.truncate_content_at_cursor(current_li, read_time_preamble_len, li_cursor_coords)
+	local content_after_cursor = list_item.get_content_after_cursor(current_li, li_cursor_coords)
+	list_item.truncate_content_at_cursor(current_li, li_cursor_coords)
 
 	local new_li = list_item.get_empty_like(current_li)
-	local new_ispec = format.get_indent_spec_like(current_ispec)
 	new_li.content = content_after_cursor
 
-	table.insert(li_array, li_cursor_coords.list_index + 1, new_li)
-	table.insert(ispec_array, li_cursor_coords.list_index + 1, new_ispec)
+	table.insert(li_block, li_cursor_coords.list_index + 1, new_li)
 
 	li_cursor_coords.list_index = li_cursor_coords.list_index + 1
 	li_cursor_coords.content_lnum = 1
 
 	if li_cursor_coords.col == 0 then
-		current_li.spec.indent_spaces = -1
+		current_li.indent_rules = {}
 	else
 		li_cursor_coords.col = list_item.get_preamble_length(new_li)
 	end
 
-	format.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	format.propagate_indent_specs(li_array, ispec_array, li_cursor_coords.list_index, #li_array, li_cursor_coords)
+	format.fix_numbering(li_block, li_cursor_coords)
+	format.propagate_indent_specs(li_block, li_cursor_coords.list_index, #li_block, li_cursor_coords)
 
 	if list_item.content_ends_in_colon(current_li) and list_item.content_is_empty(new_li) then
-		M.apply_indent(
-			li_array,
-			ispec_array,
-			li_cursor_coords.list_index,
-			li_cursor_coords.list_index,
-			li_cursor_coords
-		)
+		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 	end
 end
 

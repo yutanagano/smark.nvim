@@ -108,14 +108,14 @@ end
 
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
----@param read_time_preamble_len integer
 ---@return string[] content_after_cursor The portion of li's content that lies after the cursor
-function M.get_content_after_cursor(li, li_cursor_coords, read_time_preamble_len)
+function M.get_content_after_cursor(li, li_cursor_coords)
+	local preamble_len = M.get_preamble_length(li)
 	local content_after_cursor = { table.unpack(li.content, li_cursor_coords.content_lnum + 1, #li.content) }
 
 	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
-	if li_cursor_coords.col > read_time_preamble_len then
-		local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len + 1
+	if li_cursor_coords.col > preamble_len then
+		local col_relative_to_content = li_cursor_coords.col - preamble_len + 1
 		content_on_cursor_line = string.sub(content_on_cursor_line, col_relative_to_content)
 	end
 
@@ -130,16 +130,17 @@ function M.get_content_after_cursor(li, li_cursor_coords, read_time_preamble_len
 	return content_after_cursor
 end
 
----Modify a list item's contents, truncating any content that lies after the cursor.
+---Modify a list item's contents, truncating any content that lies after the
+---cursor.
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
----@param read_time_preamble_len integer
-function M.truncate_content_at_cursor(li, li_cursor_coords, read_time_preamble_len)
+function M.truncate_content_at_cursor(li, li_cursor_coords)
+	local preamble_len = M.get_preamble_length(li)
 	local content_before_cursor = { table.unpack(li.content, 1, li_cursor_coords.content_lnum - 1) }
 
 	local content_on_cursor_line = li.content[li_cursor_coords.content_lnum]
-	if li_cursor_coords.col > read_time_preamble_len then
-		local col_relative_to_content = li_cursor_coords.col - read_time_preamble_len
+	if li_cursor_coords.col > preamble_len then
+		local col_relative_to_content = li_cursor_coords.col - preamble_len
 		content_on_cursor_line = string.sub(content_on_cursor_line, 1, col_relative_to_content)
 		table.insert(content_before_cursor, content_on_cursor_line)
 	end

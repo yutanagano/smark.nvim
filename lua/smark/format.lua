@@ -73,38 +73,34 @@ function M.fix(li_block, li_cursor_coords, original_preamble_len)
 			end
 		end
 
-		if
-			li_cursor_coords ~= nil
-			and li_cursor_coords.list_index == li_index
-			and li_cursor_coords.col >= original_preamble_len
-		then
-			li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
+		if li_cursor_coords ~= nil and li_cursor_coords.list_index == li_index then
+			if li_cursor_coords.col >= original_preamble_len then
+				li_cursor_coords.col = li_cursor_coords.col + list_item.get_preamble_length(li) - original_preamble_len
+			elseif li_cursor_coords.col >= list_item.get_preamble_length(li) then
+				li_cursor_coords.col = list_item.get_preamble_length(li)
+			end
 		end
 	end
 end
 
----Only call this function _after_ fixing indentation, otherwise there will be undefined behaviour with respect to cursor position correction.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Only call this function _after_ fixing indentation, otherwise there will be
+---undefined behaviour with respect to cursor position correction.
+---@param li_block ListItem[]
 ---@param li_cursor_coords? LiCursorCoords
-function M.fix_numbering(li_array, ispec_array, li_cursor_coords)
-	assert(
-		#li_array == #ispec_array,
-		string.format("Lengths of li_array (%d) and ispec_array (%d) must be the same", #li_array, #ispec_array)
-	)
-
+function M.fix_numbering(li_block, li_cursor_coords)
 	local index_counter = { 1 }
 
-	for i, li in ipairs(li_array) do
-		local current_ilevel = #ispec_array[i]
+	for li_index, li in ipairs(li_block) do
+		local current_ilevel = #li.indent_rules
 
 		if current_ilevel == 0 then
 			index_counter[1] = 1
 		else
 			if
-				i > 1
-				and ispec_array[i - 1][current_ilevel] ~= nil
-				and ispec_array[i - 1][current_ilevel].is_ordered ~= li.spec.is_ordered
+				li_index > 1
+				and li_block[li_index - 1].indent_rules[current_ilevel] ~= nil
+				and li_block[li_index - 1].indent_rules[current_ilevel].is_ordered
+					~= li.indent_rules[current_ilevel].is_ordered
 			then
 				index_counter[current_ilevel] = 1
 			end
@@ -113,15 +109,15 @@ function M.fix_numbering(li_array, ispec_array, li_cursor_coords)
 				index_counter[current_ilevel] = 1
 			end
 
-			if li_cursor_coords ~= nil and li_cursor_coords.list_index == i then
+			if li_cursor_coords ~= nil and li_cursor_coords.list_index == li_index then
 				local prev_preamble_len = list_item.get_preamble_length(li)
-				li.spec.index = index_counter[current_ilevel]
+				li.position_number = index_counter[current_ilevel]
 				if li_cursor_coords.col >= prev_preamble_len then
 					local new_preamble_len = list_item.get_preamble_length(li)
 					li_cursor_coords.col = li_cursor_coords.col + new_preamble_len - prev_preamble_len
 				end
 			else
-				li.spec.index = index_counter[current_ilevel]
+				li.position_number = index_counter[current_ilevel]
 			end
 
 			index_counter[current_ilevel] = index_counter[current_ilevel] + 1
@@ -186,23 +182,24 @@ function M.propagate_ordered_type(li_array, ispec_array, start_index, end_index,
 	end
 end
 
----Modifies li_array and ispec_array in place to reflect an incremental indent spec update for a particular list item.
----The update is done by revising the indent spec of a particular item based on the one directly preceding it.
----This is useful if any edits to part of the list block have caused re-numberings and subsequent changes to indentation specs downstream.
----@param li_array ListItem[]
----@param ispec_array indent_spec[]
+---Modifies li_block in place to reflect an incremental indent spec update for
+---a particular range. The update is done by revising the indent rules of each
+---item in the range based on the one directly preceding it. This is useful if
+---any edits to part of the list block have caused re-numberings and subsequent
+---changes to indentation specs downstream. li_cursor_coords is updated in
+---place too if supplied.
+---
+---@param li_block ListItem[]
 ---@param start_index integer
 ---@param end_index integer
 ---@param li_cursor_coords? LiCursorCoords
-function M.propagate_indent_specs(li_array, ispec_array, start_index, end_index, li_cursor_coords)
+function M.propagate_indent_specs(li_block, start_index, end_index, li_cursor_coords)
 	for li_index = start_index, end_index do
-		local current_li = li_array[li_index]
-		local current_ispec = ispec_array[li_index]
-		local current_ilevel = #current_ispec
+		local current_li = li_block[li_index]
+		local current_ilevel = #current_li.indent_rules
 
 		if current_ilevel > 0 then
-			local lookbehind_li = li_array[li_index - 1]
-			local lookbehind_ispec = ispec_array[li_index - 1]
+			local lookbehind_li = li_block[li_index - 1]
 			local original_preamble_len
 
 			if li_cursor_coords ~= nil and li_index == li_cursor_coords.list_index then
@@ -210,14 +207,13 @@ function M.propagate_indent_specs(li_array, ispec_array, start_index, end_index,
 			end
 
 			for ilevel_index = 1, current_ilevel do
-				if lookbehind_ispec[ilevel_index] ~= nil then
-					current_ispec[ilevel_index].indent_spaces = lookbehind_ispec[ilevel_index].indent_spaces
+				if lookbehind_li.indent_rules[ilevel_index] ~= nil then
+					current_li.indent_rules[ilevel_index].num_spaces =
+						lookbehind_li.indent_rules[ilevel_index].num_spaces
 				else
-					current_ispec[ilevel_index].indent_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
+					current_li.indent_rules[ilevel_index].num_spaces = list_item.get_nested_indent_spaces(lookbehind_li)
 				end
 			end
-
-			current_li.spec.indent_spaces = current_ispec[current_ilevel].indent_spaces
 
 			if
 				li_cursor_coords ~= nil
@@ -230,19 +226,6 @@ function M.propagate_indent_specs(li_array, ispec_array, start_index, end_index,
 			end
 		end
 	end
-end
-
----@param ispec indent_spec
----@return indent_spec
-function M.get_indent_spec_like(ispec)
-	local new_ispec = {}
-	for i, ils in ipairs(ispec) do
-		new_ispec[i] = {
-			is_ordered = ils.is_ordered,
-			indent_spaces = ils.indent_spaces,
-		}
-	end
-	return new_ispec
 end
 
 return M

@@ -1,9 +1,7 @@
-require("smark.types")
-
 local cursor = require("smark.cursor")
-local list_item = require("smark.list_item")
 local format = require("smark.format")
 local list_manipulation = require("smark.list_manipulation")
+local smarkio = require("smark.io")
 
 local smark = {}
 local smark_private = {}
@@ -34,21 +32,18 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 function smark_private.callback_insert_newline()
-	local cursor_coords, bounds, li_array, original_text, read_time_preamble_len =
-		smark_private.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = smarkio.get_list_block_around_cursor()
 
-	if bounds == nil then
+	if li_block_bounds == nil then
 		local newline = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
 		vim.api.nvim_feedkeys(newline, "ni", false)
 		return
 	end
 
-	local li_cursor_coords = cursor.to_li_cursor_coords(cursor_coords, li_array, bounds)
-	local ispec_array = format.fix(li_array, li_cursor_coords, read_time_preamble_len)
-	list_manipulation.apply_insert_newline(li_array, ispec_array, li_cursor_coords, read_time_preamble_len)
-	smark_private.draw_list_items(li_array, original_text, bounds, li_cursor_coords)
+	list_manipulation.apply_insert_newline(li_block, li_cursor_coords)
+	smarkio.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 
-	cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_array, bounds)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
