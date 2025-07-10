@@ -207,15 +207,19 @@ function M.toggle_normal_ordered_type(li_block, li_cursor_coords)
 		end
 	end
 
-	for li_index = li_cursor_coords.list_index + 1, #li_block do
-		local current_li = li_block[li_index]
-		if #current_li.indent_rules < cursor_ilevel then
-			lower_bound = li_index - 1
-			break
-		else
-			current_li.indent_rules[cursor_ilevel].is_ordered = not cursor_ordered
-			if li_index == #li_block then
-				lower_bound = #li_block
+	if li_cursor_coords.list_index == #li_block then
+		lower_bound = #li_block
+	else
+		for li_index = li_cursor_coords.list_index + 1, #li_block do
+			local current_li = li_block[li_index]
+			if #current_li.indent_rules < cursor_ilevel then
+				lower_bound = li_index - 1
+				break
+			else
+				current_li.indent_rules[cursor_ilevel].is_ordered = not cursor_ordered
+				if li_index == #li_block then
+					lower_bound = #li_block
+				end
 			end
 		end
 	end

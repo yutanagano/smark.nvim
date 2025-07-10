@@ -31,6 +31,9 @@
   - [x] Make sure normal o is working
   - [x] Make sure in/outdent keybinds are working
   - [x] Make sure list formatting / numbering / ticking shortcuts are working
+- [x] Fix bugs:
+  - [x] Detection of empty lines as content if list block above
+  - [x] Toggling ordered type at end of block causes issues
 - [ ] Add plenary tests
 - [ ] Add basic documentation
 

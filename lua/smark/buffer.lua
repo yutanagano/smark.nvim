@@ -92,7 +92,7 @@ function M.scan_text_around_line(line_num)
 		for current_lnum = line_num - 1, 1, -1 do
 			li_shell, raw_line, content_line = M.pattern_match_line(current_lnum)
 
-			if content == "" then
+			if content_line == "" then
 				break
 			end
 
