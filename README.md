@@ -40,7 +40,7 @@ has an opinionated design with the following principles:
 
 ## ⚙️ Installation
 
-With lazy.nvim:
+With [lazy.nvim][lazy]:
 
 ```lua
 return {
@@ -52,11 +52,15 @@ return {
 }
 ```
 
+> [!IMPORTANT]
+> The plugin is active only when editing markdown documents.
+> The `ft = "markdown"` setting ensures the plugin is only loaded when opening a markdown buffer.
+
 ## 💭 Why smark?
 
 I take a lot of Markdown notes in neovim. I'm lazy, so 1. I don't like to think
 about formatting, and 2. I don't want to have to write out lists manually. For
-the first problem, I use [conform.nvim][conform] and [Prettierd][prettierd] to
+the first problem, I use [conform.nvim][conform] and [prettierd][prettierd] to
 auto-format my Markdown documents at write-time. For the second problem, I
 previously used the wonderful plugin [bullets.vim][bullets]. I love it, but one
 thing annoyed me -- it didn't play well with [Prettier's][prettier]
@@ -77,7 +81,17 @@ way, which became smark.
 >    1. Bar
 > ```
 
+## 📢 Shout-outs
+
+- A less opinionated alternative plugin: [Bullets.vim][bullets]
+- Hyperlinking Markdown documents: [markdown-oxide][markdown-oxide], [marksman][marksman]
+- This plugin is tested using [mini.test][mini]
+
 [bullets]: https://github.com/bullets-vim/bullets.vim
 [conform]: https://github.com/stevearc/conform.nvim
+[lazy]: https://github.com/folke/lazy.nvim
+[markdown-oxide]: https://github.com/Feel-ix-343/markdown-oxide
+[marksman]: https://github.com/artempyanykh/marksman
+[mini]: https://github.com/echasnovski/mini.nvim/blob/main/README.md
 [prettier]: https://prettier.io/
 [prettierd]: https://github.com/fsouza/prettierd
