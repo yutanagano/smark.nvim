@@ -1,6 +1,6 @@
 # 🧠🚅 smark.nvim
 
-![neovim_plugin](https://img.shields.io/badge/Plugin-green?style=for-the-badge&logo=neovim&logoColor=white)
+![neovim_plugin](https://img.shields.io/badge/Plugin-darkgreen?style=for-the-badge&logo=neovim&logoColor=white)
 ![MIT_license](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![Tests](https://img.shields.io/github/actions/workflow/status/yutanagano/smark.nvim/ci.yml?style=for-the-badge)
 
