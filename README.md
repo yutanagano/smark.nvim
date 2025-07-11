@@ -40,7 +40,7 @@ has an opinionated design with the following principles:
 
 ## ⚙️ Installation
 
-With lazy.nvim:
+With [lazy.nvim][lazy]:
 
 ```lua
 return {
@@ -89,6 +89,7 @@ way, which became smark.
 
 [bullets]: https://github.com/bullets-vim/bullets.vim
 [conform]: https://github.com/stevearc/conform.nvim
+[lazy]: https://github.com/folke/lazy.nvim
 [markdown-oxide]: https://github.com/Feel-ix-343/markdown-oxide
 [marksman]: https://github.com/artempyanykh/marksman
 [mini]: https://github.com/echasnovski/mini.nvim/blob/main/README.md
