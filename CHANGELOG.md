@@ -67,8 +67,7 @@
   - [x] Test newline
   - [x] Test indentation
   - [x] Test formatting commands
-- [ ] Prepare repo for public release:
+- [x] Prepare repo for public release:
   - [x] Add basic documentation
   - [x] Add license
-  - [ ] Code of conduct?
-  - [ ] Contributing?
+  - [x] Set up CI for running tests
