@@ -68,7 +68,7 @@
   - [x] Test indentation
   - [x] Test formatting commands
 - [ ] Prepare repo for public release:
-  - [ ] Add basic documentation
+  - [x] Add basic documentation
   - [x] Add license
   - [ ] Code of conduct?
   - [ ] Contributing?
