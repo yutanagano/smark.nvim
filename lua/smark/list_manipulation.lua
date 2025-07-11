@@ -114,7 +114,7 @@ function M.apply_indent(li_block, start_index, end_index, li_cursor_coords)
 		end
 
 		table.insert(li_block[li_index].indent_rules, {
-			is_ordered = nil, -- to be inferred later
+			is_ordered = li_block[li_index].indent_rules[#li_block[li_index].indent_rules].is_ordered, -- to be inferred later
 			num_spaces = li_block[li_index].indent_rules[#li_block[li_index].indent_rules].num_spaces, -- to be inferred later
 		})
 	end

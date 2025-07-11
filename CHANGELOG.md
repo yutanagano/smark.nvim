@@ -63,5 +63,12 @@
 - [x] Cleaning code:
   - [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally
         incorporate formatting, numbering and indent fixes
-- [ ] Add integration tests
-- [ ] Add basic documentation
+- [ ] Add integration tests:
+  - [x] Test newline
+  - [x] Test indentation
+  - [ ] Test formatting commands
+- [ ] Prepare repo for public release:
+  - [ ] Add basic documentation
+  - [ ] Add license
+  - [ ] Code of conduct?
+  - [ ] Contributing?

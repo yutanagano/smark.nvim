@@ -156,8 +156,6 @@ function M.propagate_ordered_type(li_block, start_index, end_index, li_cursor_co
 				current_li.indent_rules[ilevel_index].is_ordered = lookbehind_li.indent_rules[ilevel_index].is_ordered
 			elseif lookahead_li ~= nil and lookahead_li.indent_rules[ilevel_index] ~= nil then
 				current_li.indent_rules[ilevel_index].is_ordered = lookahead_li.indent_rules[ilevel_index].is_ordered
-			else
-				current_li.indent_rules[ilevel_index].is_ordered = false
 			end
 		end
 

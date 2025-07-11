@@ -104,12 +104,71 @@ T["insert_CR"]["detects ordered type of parent level automatically when auto-uni
 end
 
 T["insert_CR"]["understands multi-line bullets"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, { "- Test", "  bullet" })
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Test",
+		"  bullet",
+	})
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("A<CR>")
 
 	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
-	local expected_buffer = { "- Test", "  bullet", "- " }
+	local expected_buffer = {
+		"- Test",
+		"  bullet",
+		"- ",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["splits content correctly in multi-line lists, case 1"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Test",
+		"  bullet",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 5 })
+	child.type_keys("i<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local expected_buffer = {
+		"- Test",
+		"  bul",
+		"- let",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["splits content correctly in multi-line lists, case 2"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Test",
+		"  bullet",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 2 })
+	child.type_keys("i<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local expected_buffer = {
+		"- Test",
+		"- bullet",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["splits content correctly in multi-line lists, case 3"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Test",
+		"  bullet",
+	})
+	child.api.nvim_win_set_cursor(0, { 1, 0 })
+	child.type_keys("A<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local expected_buffer = {
+		"- Test",
+		"- bullet",
+	}
 
 	eq(result_buffer, expected_buffer)
 end
@@ -143,6 +202,42 @@ T["insert_CR"]["auto-formats list block"] = function()
 
 	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 6, true)
 	local expected_buffer = { "- Foo", "- Bar", "- Baz", "  1. Foo", "1. Bar", "2. " }
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["propagates indent rule changes due to numbering"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. Foo",
+		"2. Bar",
+		"3. Baz",
+		"4. Foofoo",
+		"5. Foobar",
+		"6. Foobaz",
+		"7. Barfoo",
+		"8. Barbar",
+		"9. Barbaz:",
+		"   - Bazfoo:",
+		"     1. Bazbar",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.type_keys("a<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 12, true)
+	local expected_buffer = {
+		"1. Foo",
+		"2. ",
+		"3. Bar",
+		"4. Baz",
+		"5. Foofoo",
+		"6. Foobar",
+		"7. Foobaz",
+		"8. Barfoo",
+		"9. Barbar",
+		"10. Barbaz:",
+		"    - Bazfoo:",
+		"      1. Bazbar",
+	}
 
 	eq(result_buffer, expected_buffer)
 end
@@ -189,6 +284,42 @@ T["normal_o"]["acts normal with empty list item at the end of a block"] = functi
 
 	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
 	local expected_buffer = { "- Test", "- ", "" }
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["normal_o"]["propagates indent rule changes due to numbering"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. Foo",
+		"2. Bar",
+		"3. Baz",
+		"4. Foofoo",
+		"5. Foobar",
+		"6. Foobaz",
+		"7. Barfoo",
+		"8. Barbar",
+		"9. Barbaz:",
+		"   - Bazfoo:",
+		"     1. Bazbar",
+	})
+	child.api.nvim_win_set_cursor(0, { 1, 0 })
+	child.type_keys("o")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 12, true)
+	local expected_buffer = {
+		"1. Foo",
+		"2. ",
+		"3. Bar",
+		"4. Baz",
+		"5. Foofoo",
+		"6. Foobar",
+		"7. Foobaz",
+		"8. Barfoo",
+		"9. Barbar",
+		"10. Barbaz:",
+		"    - Bazfoo:",
+		"      1. Bazbar",
+	}
 
 	eq(result_buffer, expected_buffer)
 end
