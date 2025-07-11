@@ -71,3 +71,4 @@
   - [x] Add basic documentation
   - [x] Add license
   - [x] Set up CI for running tests
+  - [x] Test CI
