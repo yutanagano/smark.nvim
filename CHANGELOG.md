@@ -63,10 +63,10 @@
 - [x] Cleaning code:
   - [x] Clean up "apply_insert_cr" and "apply_normal_o" to internally
         incorporate formatting, numbering and indent fixes
-- [ ] Add integration tests:
+- [x] Add integration tests:
   - [x] Test newline
   - [x] Test indentation
-  - [ ] Test formatting commands
+  - [x] Test formatting commands
 - [ ] Prepare repo for public release:
   - [ ] Add basic documentation
   - [ ] Add license
