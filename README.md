@@ -31,7 +31,7 @@ has an opinionated design with the following principles:
   are made
 - Support for multi-line list item contents
 
-> [!INFO]
+> [!NOTE]
 > See CHANGELOG.md for planned features in future releases
 
 ## Installation
@@ -60,7 +60,7 @@ auto-formatting of lists, specifically the list indentation levels. So, I wrote
 my own auto-bullet plugin that auto-completes lists in a Prettier-compatible
 way, which became smark.
 
-> [!INFO]
+> [!NOTE]
 > Prettier formats nested Markdown lists so that the child list marker aligns
 > with the content of the parent list item, resulting in 2 spaces for unordered
 > lists and enough spaces (usually 3 or more) for ordered lists.
