@@ -1,4 +1,6 @@
-# smark.nvim
+# 🧠🚅 smark.nvim
+
+![neovim](https://img.shields.io/badge/NeoVim-%2357A143.svg?&style=for-the-badge&logo=neovim&logoColor=white)
 
 Smark is a neovim plugin that helps you write and manipulate markdown lists. It
 has an opinionated design with the following principles:
@@ -8,7 +10,7 @@ has an opinionated design with the following principles:
 2. Follow [Prettier's][prettier] style convention
 3. Automatically infer as much as possible
 
-## Features
+## 📋 Features
 
 - Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal
   mode) within a list block
@@ -34,7 +36,7 @@ has an opinionated design with the following principles:
 > [!NOTE]
 > See CHANGELOG.md for planned features in future releases
 
-## Installation
+## ⚙️ Installation
 
 With lazy.nvim:
 
@@ -48,7 +50,7 @@ return {
 }
 ```
 
-## Why smark?
+## 💭 Why smark?
 
 I take a lot of Markdown notes in neovim. I'm lazy, so 1. I don't like to think
 about formatting, and 2. I don't want to have to write out lists manually. For
