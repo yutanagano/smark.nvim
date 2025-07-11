@@ -2,6 +2,10 @@ local list_item = require("smark.list_item")
 local cursor = require("smark.cursor")
 local format = require("smark.format")
 
+if table.unpack == nil then -- compatibility with older Lua
+	table.unpack = unpack
+end
+
 local M = {}
 
 ---Check if the cursor is currently inside of a list block. If it is, then

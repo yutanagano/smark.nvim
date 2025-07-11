@@ -9,6 +9,10 @@
 ---@field is_ordered boolean
 ---@field num_spaces integer The number of spaces to indent to be at this indent level
 
+if table.unpack == nil then -- compatibility with older Lua
+	table.unpack = unpack
+end
+
 local M = {}
 
 ---@param li ListItem
