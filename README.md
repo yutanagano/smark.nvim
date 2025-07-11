@@ -12,6 +12,8 @@ has an opinionated design with the following principles:
 2. Follow [Prettier's][prettier] style convention
 3. Automatically infer as much as possible
 
+![demo](./demo.gif)
+
 ## 📋 Features
 
 - Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal
