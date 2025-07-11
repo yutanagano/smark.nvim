@@ -81,7 +81,7 @@ way, which became smark.
 >    1. Bar
 > ```
 
-## Shout-outs
+## 📢 Shout-outs
 
 - A less opinionated alternative plugin: [Bullets.vim][bullets]
 - Hyperlinking Markdown documents: [markdown-oxide][markdown-oxide], [marksman][marksman]
