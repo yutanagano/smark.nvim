@@ -69,6 +69,6 @@
   - [x] Test formatting commands
 - [ ] Prepare repo for public release:
   - [ ] Add basic documentation
-  - [ ] Add license
+  - [x] Add license
   - [ ] Code of conduct?
   - [ ] Contributing?
