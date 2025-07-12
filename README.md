@@ -7,8 +7,8 @@
 Smark is a neovim plugin that helps you write and manipulate markdown lists. It
 has an opinionated design with the following principles:
 
-1. Always produce a sane list (e.g. list block is a clean tree, no sudden jumps
-   in indentation level, correct numbering)
+1. Smark's outputs must always produce a sane list (e.g. list block is a clean
+   tree, no sudden jumps in indentation level, correct numbering)
 2. Follow [Prettier's][prettier] style convention
 3. Automatically infer as much as possible
 
