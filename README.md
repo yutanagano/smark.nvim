@@ -57,7 +57,8 @@ return {
 
 > [!IMPORTANT]
 > The plugin is active only when editing markdown documents.
-> The `ft = "markdown"` setting ensures the plugin is only loaded when opening a markdown buffer.
+> The `ft = "markdown"` setting ensures the plugin is lazily loaded only after
+> NeoVim opens a markdown buffer.
 
 ## 💭 Why smark?
 
@@ -82,11 +83,16 @@ way, which became smark.
 >
 > 1. Foo
 >    1. Bar
->       ...
-> 2. Foo 1. Bar
->    ...
+> 2. Foo
 > 3. Foo
->    1. Bar
+> 4. Foo
+> 5. Foo
+> 6. Foo
+> 7. Foo
+> 8. Foo
+> 9. Foo
+> 10. Foo:
+>     1. Bar
 > ```
 
 ## 📢 Shout-outs
