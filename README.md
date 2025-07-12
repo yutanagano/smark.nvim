@@ -24,7 +24,7 @@ has an opinionated design with the following principles:
 - Easy indenting / outdenting of list items using standard vim bindings:
   - Insert mode: `<C-t>` indents, `<C-d>` outdents
   - Normal mode: `>>`/`>` indents, `<<`/`<` outdents
-  - Visual mode: `>` indents, `>` outdents
+  - Visual mode: `>` indents, `<` outdents
 - Easy toggling of ordered / unordered list types with `<leader>lo` in normal
   and visual modes
 - Easy toggling of task item completion status `<leader>lx` in normal and
@@ -33,6 +33,7 @@ has an opinionated design with the following principles:
     tree (e.g. marking a task complete will automatically mark all of its
     children as complete, and its parent as well if all its siblings are also
     complete)
+- Trigger auto-formatting of current list block around cursor with `<leader>lf`
 - Infers and updates indentation rules across the current list block when edits
   are made
 - Support for multi-line list item contents
@@ -81,12 +82,18 @@ way, which became smark.
 >
 > 1. Foo
 >    1. Bar
+>       ...
+> 2. Foo 1. Bar
+>    ...
+> 3. Foo
+>    1. Bar
 > ```
 
 ## 📢 Shout-outs
 
 - A less opinionated alternative plugin: [Bullets.vim][bullets]
 - Hyperlinking Markdown documents: [markdown-oxide][markdown-oxide], [marksman][marksman]
+- Render Markdown within NeoVim: [render-markdown.nvim][render-markdown]
 - This plugin is tested using [mini.test][mini]
 
 [bullets]: https://github.com/bullets-vim/bullets.vim
@@ -97,3 +104,4 @@ way, which became smark.
 [mini]: https://github.com/echasnovski/mini.nvim/blob/main/README.md
 [prettier]: https://prettier.io/
 [prettierd]: https://github.com/fsouza/prettierd
+[render-markdown]: https://github.com/MeanderingProgrammer/render-markdown.nvim
