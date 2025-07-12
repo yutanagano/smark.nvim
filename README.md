@@ -19,7 +19,7 @@ has an opinionated design with the following principles:
 - Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal
   mode) within a list block
 - Automatic numbering of ordered lists
-- Always auto-formats current list block to be
+- Any smark-driven edit auto-formats the current list block to be
   [Prettier][prettier]-compatible
 - Easy indenting / outdenting of list items using standard vim bindings:
   - Insert mode: `<C-t>` indents, `<C-d>` outdents
@@ -33,7 +33,8 @@ has an opinionated design with the following principles:
     tree (e.g. marking a task complete will automatically mark all of its
     children as complete, and its parent as well if all its siblings are also
     complete)
-- Trigger auto-formatting of current list block around cursor with `<leader>lf`
+- Manually trigger the auto-formatting of the list block around the cursor with
+  `<leader>lf`
 - Infers and updates indentation rules across the current list block when edits
   are made
 - Support for multi-line list item contents
