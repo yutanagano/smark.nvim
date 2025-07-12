@@ -7,8 +7,8 @@
 Smark is a neovim plugin that helps you write and manipulate markdown lists. It
 has an opinionated design with the following principles:
 
-1. Always produce a sane list (e.g. list block is a clean tree, no sudden jumps
-   in indentation level, correct numbering)
+1. Smark's outputs must always produce a sane list (e.g. list block is a clean
+   tree, no sudden jumps in indentation level, correct numbering)
 2. Follow [Prettier's][prettier] style convention
 3. Automatically infer as much as possible
 
@@ -19,12 +19,12 @@ has an opinionated design with the following principles:
 - Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal
   mode) within a list block
 - Automatic numbering of ordered lists
-- Always auto-formats current list block to be
+- Any smark-driven edit auto-formats the current list block to be
   [Prettier][prettier]-compatible
 - Easy indenting / outdenting of list items using standard vim bindings:
   - Insert mode: `<C-t>` indents, `<C-d>` outdents
   - Normal mode: `>>`/`>` indents, `<<`/`<` outdents
-  - Visual mode: `>` indents, `>` outdents
+  - Visual mode: `>` indents, `<` outdents
 - Easy toggling of ordered / unordered list types with `<leader>lo` in normal
   and visual modes
 - Easy toggling of task item completion status `<leader>lx` in normal and
@@ -33,6 +33,8 @@ has an opinionated design with the following principles:
     tree (e.g. marking a task complete will automatically mark all of its
     children as complete, and its parent as well if all its siblings are also
     complete)
+- Manually trigger the auto-formatting of the list block around the cursor with
+  `<leader>lf`
 - Infers and updates indentation rules across the current list block when edits
   are made
 - Support for multi-line list item contents
@@ -56,7 +58,8 @@ return {
 
 > [!IMPORTANT]
 > The plugin is active only when editing markdown documents.
-> The `ft = "markdown"` setting ensures the plugin is only loaded when opening a markdown buffer.
+> The `ft = "markdown"` setting ensures the plugin is lazily loaded only after
+> NeoVim opens a markdown buffer.
 
 ## 💭 Why smark?
 
@@ -81,12 +84,23 @@ way, which became smark.
 >
 > 1. Foo
 >    1. Bar
+> 2. Foo
+> 3. Foo
+> 4. Foo
+> 5. Foo
+> 6. Foo
+> 7. Foo
+> 8. Foo
+> 9. Foo
+> 10. Foo:
+>     1. Bar
 > ```
 
 ## 📢 Shout-outs
 
 - A less opinionated alternative plugin: [Bullets.vim][bullets]
 - Hyperlinking Markdown documents: [markdown-oxide][markdown-oxide], [marksman][marksman]
+- Render Markdown within NeoVim: [render-markdown.nvim][render-markdown]
 - This plugin is tested using [mini.test][mini]
 
 [bullets]: https://github.com/bullets-vim/bullets.vim
@@ -97,3 +111,4 @@ way, which became smark.
 [mini]: https://github.com/echasnovski/mini.nvim/blob/main/README.md
 [prettier]: https://prettier.io/
 [prettierd]: https://github.com/fsouza/prettierd
+[render-markdown]: https://github.com/MeanderingProgrammer/render-markdown.nvim
