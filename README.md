@@ -4,7 +4,7 @@
 ![MIT_license](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![Tests](https://img.shields.io/github/actions/workflow/status/yutanagano/smark.nvim/ci.yml?style=for-the-badge)
 
-Smark is a neovim plugin that helps you write and manipulate markdown lists. It
+Smark is a [NeoVim][neovim] plugin that helps you write and manipulate markdown lists. It
 has an opinionated design with the following principles:
 
 1. Smark's outputs must always produce a sane list (e.g. list block is a clean
@@ -50,20 +50,20 @@ With [lazy.nvim][lazy]:
 return {
   {
     "yutanagano/smark.nvim",
-    ft = "markdown",
+    ft = {"markdown", "text"},
     config = true
   }
 }
 ```
 
 > [!IMPORTANT]
-> The plugin is active only when editing markdown documents.
-> The `ft = "markdown"` setting ensures the plugin is lazily loaded only after
-> NeoVim opens a markdown buffer.
+> The plugin is active only when editing markdown or plain text documents.
+> The `ft = {"markdown", "text"}` setting ensures the plugin is lazily loaded
+> only after NeoVim opens a markdown or plain text buffer.
 
 ## 💭 Why smark?
 
-I take a lot of Markdown notes in neovim. I'm lazy, so 1. I don't like to think
+I take a lot of Markdown notes in [NeoVim][neovim]. I'm lazy, so 1. I don't like to think
 about formatting, and 2. I don't want to have to write out lists manually. For
 the first problem, I use [conform.nvim][conform] and [prettierd][prettierd] to
 auto-format my Markdown documents at write-time. For the second problem, I
@@ -109,6 +109,7 @@ way, which became smark.
 [markdown-oxide]: https://github.com/Feel-ix-343/markdown-oxide
 [marksman]: https://github.com/artempyanykh/marksman
 [mini]: https://github.com/echasnovski/mini.nvim/blob/main/README.md
+[neovim]: https://neovim.io/
 [prettier]: https://prettier.io/
 [prettierd]: https://github.com/fsouza/prettierd
 [render-markdown]: https://github.com/MeanderingProgrammer/render-markdown.nvim
