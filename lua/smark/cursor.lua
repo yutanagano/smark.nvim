@@ -53,14 +53,24 @@ function M.make_relative_to_containing_li(line_num, li_array, li_array_bounds)
 end
 
 ---@param li_cursor_coords LiCursorCoords
----@param li_array ListItem[]
----@param li_array_bounds TextBlockBounds bounds of list block
+---@param li_block ListItem[]
+---@param li_block_bounds TextBlockBounds bounds of list block
 ---@return CursorCoords
-function M.to_absolute_cursor_coords(li_cursor_coords, li_array, li_array_bounds)
+function M.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+	return {
+		row = li_block_bounds.upper - 1 + M.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block),
+		col = li_cursor_coords.col,
+	}
+end
+
+---@param li_cursor_coords LiCursorCoords
+---@param li_block ListItem[]
+---@return integer
+function M.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block)
 	local offset = 0
 
 	for i = 1, li_cursor_coords.list_index do
-		local li = li_array[i]
+		local li = li_block[i]
 
 		if i < li_cursor_coords.list_index then
 			offset = offset + #li.content
@@ -69,10 +79,7 @@ function M.to_absolute_cursor_coords(li_cursor_coords, li_array, li_array_bounds
 		end
 	end
 
-	return {
-		row = li_array_bounds.upper + offset - 1,
-		col = li_cursor_coords.col,
-	}
+	return offset
 end
 
 return M
