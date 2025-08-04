@@ -6,16 +6,16 @@
       a task list block, make sure the parent level item becomes marked as
       incomplete (because there is now at least one child that is
       incomplete)
+- [ ] Add method to toggle task list:
+  - [ ] For normal mode
+  - [ ] For visual mode
+- [ ] Add method to toggle between lists and standard paragraphs
 - [ ] Make it so that when list elements are fully outdented (they are
       no longer list elements), empty lines are added in the spaces between
       any adjacent list elements and normal paragraph lines
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
-- [ ] Add method to toggle task list:
-  - [ ] For normal mode
-  - [ ] For visual mode
-- [ ] Add method to toggle between lists and standard paragraphs
 
 ## Version 0.1
 

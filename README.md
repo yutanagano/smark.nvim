@@ -4,13 +4,14 @@
 ![MIT_license](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![Tests](https://img.shields.io/github/actions/workflow/status/yutanagano/smark.nvim/ci.yml?style=for-the-badge)
 
-Smark is a [NeoVim][neovim] plugin that helps you write and manipulate markdown lists. It
-has an opinionated design with the following principles:
+Smark is a [NeoVim][neovim] plugin that helps you write and manipulate markdown
+lists. It has an opinionated design with the following principles:
 
-1. Smark's outputs must always produce a sane list (e.g. list block is a clean
-   tree, no sudden jumps in indentation level, correct numbering)
-2. Follow [Prettier's][prettier] style convention
-3. Automatically infer as much as possible
+1. **Correct**: only consider and always output valid Markdown lists that have
+   a sane structure (e.g. list block is a clean tree, no sudden jumps in
+   indentation level, correct numbering)
+2. **Clean**: follow [Prettier's][prettier] style convention
+3. **Smart**: Automatically infer as much as possible
 
 ![demo](./demo.gif)
 
@@ -50,7 +51,7 @@ With [lazy.nvim][lazy]:
 return {
   {
     "yutanagano/smark.nvim",
-    ft = {"markdown", "text"},
+    ft = { "markdown", "text" },
     config = true
   }
 }
@@ -63,15 +64,15 @@ return {
 
 ## 💭 Why smark?
 
-I take a lot of Markdown notes in [NeoVim][neovim]. I'm lazy, so 1. I don't like to think
-about formatting, and 2. I don't want to have to write out lists manually. For
-the first problem, I use [conform.nvim][conform] and [prettierd][prettierd] to
-auto-format my Markdown documents at write-time. For the second problem, I
-previously used the wonderful plugin [bullets.vim][bullets]. I love it, but one
-thing annoyed me -- it didn't play well with [Prettier's][prettier]
-auto-formatting of lists, specifically the list indentation levels. So, I wrote
-my own auto-bullet plugin that auto-completes lists in a Prettier-compatible
-way, which became smark.
+I take a lot of Markdown notes in [NeoVim][neovim]. I'm lazy, so 1. I don't
+like to think about formatting, and 2. I don't want to have to write out lists
+manually. For the first problem, I use [conform.nvim][conform] and
+[prettierd][prettierd] to auto-format my Markdown documents at write-time. For
+the second problem, I previously used the wonderful plugin
+[bullets.vim][bullets]. I love it, but one thing annoyed me - it didn't play
+well with [Prettier's][prettier] auto-formatting of lists, specifically the
+list indentation levels. So, I wrote my own auto-bullet plugin that
+auto-completes lists in a Prettier-compatible way, which became smark.
 
 > [!NOTE]
 > Prettier formats nested Markdown lists so that the child list marker aligns
