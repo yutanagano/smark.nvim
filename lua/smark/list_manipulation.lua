@@ -122,6 +122,7 @@ function M.apply_indent(li_block, start_index, end_index, li_cursor_coords)
 	format.propagate_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, start_index, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 end
 
 ---Edit li_block and li_cursor_coords (if supplied) in place to reflect
@@ -176,6 +177,7 @@ function M.apply_unindent(li_block, start_index, end_index, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, start_index + 1, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 end
 
 ---For a given region within a list block, toggle whether the list element type
