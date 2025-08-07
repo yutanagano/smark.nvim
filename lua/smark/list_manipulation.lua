@@ -354,4 +354,37 @@ function M.toggle_visual_checkbox(li_block, start_row, end_row, li_cursor_coords
 	format.sanitise_completion_statuses(li_block)
 end
 
+---For a given region within a list block, toggle whether the list element is a
+---task element. This edits li_block in place to reflect the changes. Whether a
+---list item is a task is toggled for the list element which the cursor is on,
+---as well as all its contiguous siblings (list elements that are at the same
+---indent level, and that are all children of the same parent list element).
+---Only call this function after first fixing format.
+---
+---@param li_block ListItem[]
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_normal_task(li_block, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local cursor_ilevel = #cursor_li.indent_rules
+	local target_is_task_status = not cursor_li.is_task
+
+	for li_index = li_cursor_coords.list_index, 1, -1 do
+		local current_li = li_block[li_index]
+		if #current_li.indent_rules < cursor_ilevel then
+			break
+		end
+		current_li.is_task = target_is_task_status
+	end
+
+	if li_cursor_coords.list_index < #li_block then
+		for li_index = li_cursor_coords.list_index + 1, #li_block do
+			local current_li = li_block[li_index]
+			if #current_li.indent_rules < cursor_ilevel then
+				break
+			end
+			current_li.is_task = target_is_task_status
+		end
+	end
+end
+
 return M
