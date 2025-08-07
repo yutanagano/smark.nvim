@@ -1,18 +1,23 @@
 ## Version 0.2
 
-- [x] Fix buffer write bug that caused more line writes than was
-      necessary
-- [ ] Make it so that when adding a new line (using <CR> or o) inside of
-      a task list block, make sure the parent level item becomes marked as
-      incomplete (because there is now at least one child that is
-      incomplete)
+- [x] Fix buffer write bug that caused more line writes than was necessary
+- [ ] Improve inference of indented list element type:
+  - Scan as many list elements above the current one to infer as much as
+    possible about every indent level (current implementation only looks at
+    directly preceding element)
+  - Override inference using element directly after the indent selection only
+    for indent levels that were not inferable from the list item directly
+    preceding selection
+- [ ] Make it so that when adding a new line (using <CR> or o) inside of a task
+      list block, make sure the parent level item becomes marked as incomplete
+      (because there is now at least one child that is incomplete)
 - [ ] Add method to toggle task list:
   - [ ] For normal mode
   - [ ] For visual mode
 - [ ] Add method to toggle between lists and standard paragraphs
-- [ ] Make it so that when list elements are fully outdented (they are
-      no longer list elements), empty lines are added in the spaces between
-      any adjacent list elements and normal paragraph lines
+- [ ] Make it so that when list elements are fully outdented (they are no
+      longer list elements), empty lines are added in the spaces between any
+      adjacent list elements and normal paragraph lines
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
