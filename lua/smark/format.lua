@@ -9,7 +9,10 @@ local M = {}
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords? LiCursorCoords
----@param original_preamble_len? integer The number of characters before content on the cursor line at read time. If not supplied, then is computed assuming that the list item had no extra whitespace characters before the content, which is not necessarily the case at read time.
+---@param original_preamble_len? integer The number of characters before
+---content on the cursor line at read time. If not supplied, then is computed
+---assuming that the list item had no extra whitespace characters before the
+---content, which is not necessarily the case at read time.
 function M.fix(li_block, li_cursor_coords, original_preamble_len)
 	local index_counter = {}
 	local prev_original_num_spaces
@@ -128,10 +131,12 @@ end
 
 ---Infers what the is_ordered status should be for all the list items within
 ---the specified range. is_ordered types for as many indent levels as possible
----are first inferred from the list item immediately preceding the range. If
----the list item immediately following the range has further indent level
----specified, then inferences for the is_ordered status for those levels are
----propagated backwards.
+---are first inferred from the list items preceding the range. If the list item
+---immediately following the range has further indent levels specified, then
+---these further levels are inferred from that. Furthermore, any indent levels
+---specified in the item immediately following, that is not specified in the
+---item immediately preceding, is overridden to follow the spec in the item
+---immediately following.
 ---
 ---@param li_block ListItem[]
 ---@param start_index integer
@@ -140,8 +145,31 @@ end
 function M.propagate_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	assert(start_index > 1, "ordered type propagation cannot be done for root")
 
-	local lookbehind_li = li_block[start_index - 1]
+	---@type IndentRule[]
+	local reference_indent_rules = {}
+
+	for li_index = start_index - 1, 1, -1 do
+		local li = li_block[li_index]
+		if #li.indent_rules > #reference_indent_rules then
+			for indent_index = #reference_indent_rules + 1, #li.indent_rules do
+				table.insert(reference_indent_rules, {
+					is_ordered = li.indent_rules[indent_index].is_ordered,
+					num_spaces = li.indent_rules[indent_index].num_spaces,
+				})
+			end
+		end
+	end
+
+	local preceding_li = li_block[start_index - 1]
 	local lookahead_li = li_block[end_index + 1]
+	if lookahead_li ~= nil and #lookahead_li.indent_rules > #preceding_li.indent_rules then
+		for indent_index = #preceding_li.indent_rules + 1, #lookahead_li.indent_rules do
+			reference_indent_rules[indent_index] = {
+				is_ordered = lookahead_li.indent_rules[indent_index].is_ordered,
+				num_spaces = lookahead_li.indent_rules[indent_index].num_spaces,
+			}
+		end
+	end
 
 	for li_index = start_index, end_index do
 		local current_li = li_block[li_index]
@@ -152,10 +180,8 @@ function M.propagate_ordered_type(li_block, start_index, end_index, li_cursor_co
 		end
 
 		for ilevel_index = 1, #current_li.indent_rules do
-			if lookbehind_li.indent_rules[ilevel_index] ~= nil then
-				current_li.indent_rules[ilevel_index].is_ordered = lookbehind_li.indent_rules[ilevel_index].is_ordered
-			elseif lookahead_li ~= nil and lookahead_li.indent_rules[ilevel_index] ~= nil then
-				current_li.indent_rules[ilevel_index].is_ordered = lookahead_li.indent_rules[ilevel_index].is_ordered
+			if reference_indent_rules[ilevel_index] ~= nil then
+				current_li.indent_rules[ilevel_index].is_ordered = reference_indent_rules[ilevel_index].is_ordered
 			end
 		end
 
