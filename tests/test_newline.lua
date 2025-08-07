@@ -16,12 +16,21 @@ local T = new_set({
 T["insert_CR"] = new_set()
 
 T["insert_CR"]["works as normal when not on list"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, { "Foobar", "", "- Test" })
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"Foobar",
+		"",
+		"- Test",
+	})
 	child.api.nvim_win_set_cursor(0, { 1, 3 })
 	child.type_keys("i<CR>")
 
 	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
-	local expected_buffer = { "Foo", "bar", "", "- Test" }
+	local expected_buffer = {
+		"Foo",
+		"bar",
+		"",
+		"- Test",
+	}
 
 	eq(result_buffer, expected_buffer)
 end
@@ -237,6 +246,26 @@ T["insert_CR"]["propagates indent rule changes due to numbering"] = function()
 		"10. Barbaz:",
 		"    - Bazfoo:",
 		"      1. Bazbar",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["infers is_ordered type from context"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. Foo",
+		"   - Bar",
+		"2. Baz:",
+	})
+	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.type_keys("A<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
+	local expected_buffer = {
+		"1. Foo",
+		"   - Bar",
+		"2. Baz:",
+		"   - ",
 	}
 
 	eq(result_buffer, expected_buffer)
