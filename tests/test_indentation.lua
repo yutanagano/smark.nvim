@@ -360,6 +360,63 @@ T["visual"]["> is an indent operator"] = function()
 	eq(result_buffer, expected_buffer)
 end
 
+T["visual"]["indentation automatically infers is_ordered types according to spec"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Foo",
+		"  1. Bar",
+		"     - Baz",
+		"       1. Noice",
+		"- Sheesh",
+		"- Boink",
+		"  - Doink",
+		"    - Yoink",
+	})
+	child.api.nvim_win_set_cursor(0, { 6, 0 })
+	child.type_keys("V2j>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 8, true)
+	local expected_buffer = {
+		"- Foo",
+		"  1. Bar",
+		"     - Baz",
+		"       1. Noice",
+		"- Sheesh",
+		"  1. Boink",
+		"     - Doink",
+		"       1. Yoink",
+	}
+
+	eq(result_buffer, expected_buffer)
+
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Foo",
+		"  1. Bar",
+		"     - Baz",
+		"       1. Noice",
+		"- Sheesh",
+		"- Boink",
+		"  - Doink",
+		"    - Yoink",
+		"  - Zoink",
+	})
+	child.api.nvim_win_set_cursor(0, { 6, 0 })
+	child.type_keys("V2j>")
+
+	result_buffer = child.api.nvim_buf_get_lines(0, 0, 8, true)
+	expected_buffer = {
+		"- Foo",
+		"  1. Bar",
+		"     - Baz",
+		"       1. Noice",
+		"- Sheesh",
+		"  - Boink",
+		"    - Doink",
+		"      1. Yoink",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["visual"]["< is an outdent operator"] = function()
 	child.api.nvim_buf_set_lines(0, 0, 0, true, {
 		"1. Foo",
