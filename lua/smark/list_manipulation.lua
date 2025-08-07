@@ -36,6 +36,7 @@ function M.apply_insert_newline(li_block, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, li_cursor_coords.list_index, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 
 	if list_item.content_ends_in_colon(current_li) and list_item.content_is_empty(new_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
@@ -69,6 +70,7 @@ function M.apply_normal_o(li_block, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, li_cursor_coords.list_index + 1, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 
 	if list_item.content_ends_in_colon(current_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)

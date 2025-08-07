@@ -274,7 +274,7 @@ function M.sanitise_completion_statuses(li_block)
 	end)
 
 	local task_leaf_level = task_li_array[#task_li_array].ilevel
-	while task_li_array[#task_li_array].ilevel == task_leaf_level do
+	while #task_li_array > 0 and task_li_array[#task_li_array].ilevel == task_leaf_level do
 		table.remove(task_li_array)
 	end
 
