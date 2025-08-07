@@ -271,6 +271,43 @@ T["insert_CR"]["infers is_ordered type from context"] = function()
 	eq(result_buffer, expected_buffer)
 end
 
+T["insert_CR"]["sets parent to incomplete if appropriate"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. [x] Foo",
+		"   - [x] Bar",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.type_keys("A<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local expected_buffer = {
+		"1. [ ] Foo",
+		"   - [x] Bar",
+		"   - [ ] ",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["sets parent to complete if appropriate"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. [ ] Foo",
+		"   - [x] Bar",
+		"   - [ ] ",
+	})
+	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.type_keys("A<CR>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local expected_buffer = {
+		"1. [x] Foo",
+		"   - [x] Bar",
+		"2. [ ] ",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["normal_o"] = new_set()
 
 T["normal_o"]["auto-generates a new list element"] = function()
@@ -348,6 +385,24 @@ T["normal_o"]["propagates indent rule changes due to numbering"] = function()
 		"10. Barbaz:",
 		"    - Bazfoo:",
 		"      1. Bazbar",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["normal_o"]["updates parent completion status if appropriate"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. [x] Foo",
+		"   - [x] Bar",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.type_keys("o")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local expected_buffer = {
+		"1. [ ] Foo",
+		"   - [x] Bar",
+		"   - [ ] ",
 	}
 
 	eq(result_buffer, expected_buffer)

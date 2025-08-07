@@ -36,6 +36,7 @@ function M.apply_insert_newline(li_block, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, li_cursor_coords.list_index, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 
 	if list_item.content_ends_in_colon(current_li) and list_item.content_is_empty(new_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
@@ -69,6 +70,7 @@ function M.apply_normal_o(li_block, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, li_cursor_coords.list_index + 1, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 
 	if list_item.content_ends_in_colon(current_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
@@ -122,6 +124,7 @@ function M.apply_indent(li_block, start_index, end_index, li_cursor_coords)
 	format.propagate_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, start_index, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 end
 
 ---Edit li_block and li_cursor_coords (if supplied) in place to reflect
@@ -176,6 +179,7 @@ function M.apply_unindent(li_block, start_index, end_index, li_cursor_coords)
 
 	format.fix_numbering(li_block, li_cursor_coords)
 	format.propagate_indent_rules(li_block, start_index + 1, #li_block, li_cursor_coords)
+	format.sanitise_completion_statuses(li_block)
 end
 
 ---For a given region within a list block, toggle whether the list element type
@@ -302,59 +306,7 @@ function M.toggle_normal_checkbox(li_block, li_cursor_coords)
 		return
 	end
 
-	local parent
-	local incomplete_sibling_found = false
-
-	if target_completion_status == false then
-		incomplete_sibling_found = true
-	end
-
-	for li_index = li_cursor_coords.list_index - 1, 1, -1 do
-		local current_li = li_block[li_index]
-
-		if
-			not incomplete_sibling_found
-			and #current_li.indent_rules == cursor_ilevel
-			and current_li.is_task
-			and not current_li.is_completed
-		then
-			incomplete_sibling_found = true
-		end
-
-		if #current_li.indent_rules < cursor_ilevel then
-			parent = current_li
-			break
-		end
-	end
-
-	if incomplete_sibling_found then
-		parent.is_completed = false
-		return
-	end
-
-	for li_index = li_cursor_coords.list_index + 1, #li_block do
-		local current_li = li_block[li_index]
-
-		if
-			not incomplete_sibling_found
-			and #current_li.indent_rules == cursor_ilevel
-			and current_li.is_task
-			and not current_li.is_completed
-		then
-			incomplete_sibling_found = true
-			break
-		end
-
-		if #current_li.indent_rules < cursor_ilevel then
-			break
-		end
-	end
-
-	if incomplete_sibling_found then
-		parent.is_completed = false
-	else
-		parent.is_completed = true
-	end
+	format.sanitise_completion_statuses(li_block)
 end
 
 ---For a given region within a list block containing task list elements, toggle
@@ -373,12 +325,33 @@ end
 function M.toggle_visual_checkbox(li_block, start_row, end_row, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local target_completion_status = not cursor_li.is_completed
+	local current_parent_task_li = nil
 
 	for li_index = start_row, end_row do
-		if li_block[li_index].is_task then
-			li_block[li_index].is_completed = target_completion_status
+		local current_li = li_block[li_index]
+		if current_li.is_task then
+			current_li.is_completed = target_completion_status
+			if current_parent_task_li == nil or #current_li.indent_rules <= #current_parent_task_li.indent_rules then
+				current_parent_task_li = current_li
+			end
 		end
 	end
+
+	if current_parent_task_li ~= nil then
+		for li_index = end_row + 1, #li_block do
+			local child_li = li_block[li_index]
+
+			if #child_li.indent_rules <= #current_parent_task_li.indent_rules then
+				break
+			end
+
+			if child_li.is_task then
+				child_li.is_completed = target_completion_status
+			end
+		end
+	end
+
+	format.sanitise_completion_statuses(li_block)
 end
 
 return M
