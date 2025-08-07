@@ -88,6 +88,7 @@ end
 
 ---Only call this function _after_ fixing indentation, otherwise there will be
 ---undefined behaviour with respect to cursor position correction.
+---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords? LiCursorCoords
 function M.fix_numbering(li_block, li_cursor_coords)
@@ -238,6 +239,71 @@ function M.propagate_indent_rules(li_block, start_index, end_index, li_cursor_co
 				li_cursor_coords.col = li_cursor_coords.col
 					+ list_item.get_preamble_length(current_li)
 					- original_preamble_len
+			end
+		end
+	end
+end
+
+---Looks through the tree for any task items with children, and ensures that
+---its own completion status reflects that of its children (as a set). For
+---example, if a task item is marked as complete but some of its children are
+---marked incomplete, then mark the parent item as incomplete. The sanitisation
+---process is done from the leaves of the tree first, then makes its way
+---towards the root level, so that any changes in completion status are
+---propagated correctly. This function modifies li_block in place. Undefined
+---behaviour if called on a li_block whose indent info is not yet fixed.
+---
+---@param li_block ListItem[]
+function M.sanitise_completion_statuses(li_block)
+	local task_li_array = {}
+	for li_index, li in ipairs(li_block) do
+		if li.is_task then
+			table.insert(task_li_array, {
+				li_index = li_index,
+				ilevel = #li.indent_rules,
+			})
+		end
+	end
+
+	if #task_li_array == 0 then
+		return
+	end
+
+	table.sort(task_li_array, function(a, b)
+		return a.ilevel < b.ilevel
+	end)
+
+	local task_leaf_level = task_li_array[#task_li_array].ilevel
+	while #task_li_array > 0 and task_li_array[#task_li_array].ilevel == task_leaf_level do
+		table.remove(task_li_array)
+	end
+
+	while #task_li_array > 0 do
+		local task_li_spec = table.remove(task_li_array)
+		local parent_li = li_block[task_li_spec.li_index]
+		local task_children_found = false
+		local incomplete_child_found = false
+
+		for li_index = task_li_spec.li_index + 1, #li_block do
+			local child_li = li_block[li_index]
+
+			if #child_li.indent_rules <= task_li_spec.ilevel then
+				break
+			end
+
+			if child_li.is_task then
+				task_children_found = true
+				if not child_li.is_completed then
+					incomplete_child_found = true
+				end
+			end
+		end
+
+		if task_children_found then
+			if incomplete_child_found then
+				parent_li.is_completed = false
+			else
+				parent_li.is_completed = true
 			end
 		end
 	end
