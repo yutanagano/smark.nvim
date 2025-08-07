@@ -87,16 +87,18 @@ T["normal"]["<leader>lt toggles task list items for contiguous siblings"] = func
 	child.api.nvim_buf_set_lines(0, 0, 0, true, {
 		"1. Foo",
 		"   - Bar",
-		"   - Baz",
+		"     1. Baz",
+		"   - Sheesh",
 	})
-	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(" lt")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
 	local expected_buffer = {
 		"1. Foo",
 		"   - [ ] Bar",
-		"   - [ ] Baz",
+		"     1. Baz",
+		"   - [ ] Sheesh",
 	}
 
 	eq(result_buffer, expected_buffer)

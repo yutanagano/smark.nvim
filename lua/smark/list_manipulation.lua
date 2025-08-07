@@ -372,8 +372,9 @@ function M.toggle_normal_task(li_block, li_cursor_coords)
 		local current_li = li_block[li_index]
 		if #current_li.indent_rules < cursor_ilevel then
 			break
+		elseif #current_li.indent_rules == cursor_ilevel then
+			current_li.is_task = target_is_task_status
 		end
-		current_li.is_task = target_is_task_status
 	end
 
 	if li_cursor_coords.list_index < #li_block then
@@ -381,8 +382,9 @@ function M.toggle_normal_task(li_block, li_cursor_coords)
 			local current_li = li_block[li_index]
 			if #current_li.indent_rules < cursor_ilevel then
 				break
+			elseif #current_li.indent_rules == cursor_ilevel then
+				current_li.is_task = target_is_task_status
 			end
-			current_li.is_task = target_is_task_status
 		end
 	end
 end
