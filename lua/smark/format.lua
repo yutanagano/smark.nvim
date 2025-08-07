@@ -265,6 +265,10 @@ function M.sanitise_completion_statuses(li_block)
 		end
 	end
 
+	if #task_li_array == 0 then
+		return
+	end
+
 	table.sort(task_li_array, function(a, b)
 		return a.ilevel < b.ilevel
 	end)
