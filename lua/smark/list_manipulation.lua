@@ -78,10 +78,10 @@ end
 ---Edit li_block and li_cursor_coords (if supplied) in place to reflect
 ---indenting one level the list items from start_index to end_index inclusive.
 ---If the first item to be indented has no siblings above it, it will result in
----a no-op. The one exception to this is the root (first row) of an indent
----block, where the entire block will be indented. Only call this function
----after first fixing format. Ensure that start_index and end_index are within
----bounds of the list block, otherwise this can cause undefined behaviour.
+---a no-op. The one exception to this is the root (first row) of a list block,
+---where the entire block will be indented. Only call this function after first
+---fixing format. Ensure that start_index and end_index are within bounds of
+---the list block, otherwise this can cause undefined behaviour.
 ---
 ---@param li_block ListItem[]
 ---@param start_index integer index of first list item to unindent

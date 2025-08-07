@@ -1,7 +1,7 @@
 ## Version 0.2
 
 - [x] Fix buffer write bug that caused more line writes than was necessary
-- [ ] Improve inference of indented list element type:
+- [x] Improve inference of indented list element type:
   - Scan as many list elements above the current one to infer as much as
     possible about every indent level (current implementation only looks at
     directly preceding element)
