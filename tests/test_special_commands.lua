@@ -121,7 +121,7 @@ T["visual"]["<leader>lx toggles completion status"] = function()
 	local expected_buffer = {
 		"1. [x] Foo",
 		"   - [x] Bar",
-		"   - [ ] Baz",
+		"   - [x] Baz",
 	}
 
 	eq(result_buffer, expected_buffer)
