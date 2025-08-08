@@ -69,13 +69,28 @@ end
 function M.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block)
 	local offset = 0
 
+	local previous_li_fully_outdented = false
 	for i = 1, li_cursor_coords.list_index do
 		local li = li_block[i]
 
+		local separator_row = 0
+		if
+			(previous_li_fully_outdented and #li.indent_rules > 0)
+			or (not previous_li_fully_outdented and #li.indent_rules == 0)
+		then
+			separator_row = 1
+		end
+
 		if i < li_cursor_coords.list_index then
-			offset = offset + #li.content
+			offset = offset + separator_row + #li.content
 		else
-			offset = offset + li_cursor_coords.content_lnum
+			offset = offset + separator_row + li_cursor_coords.content_lnum
+		end
+
+		if #li.indent_rules == 0 then
+			previous_li_fully_outdented = true
+		else
+			previous_li_fully_outdented = false
 		end
 	end
 

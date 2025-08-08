@@ -238,17 +238,26 @@ T["normal"]["outdentation at root destroys list element"] = function()
 	child.api.nvim_buf_set_lines(0, 0, 0, true, {
 		"- Foo",
 		"- Bar",
+		"- Baz",
 	})
-	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.api.nvim_win_set_cursor(0, { 2, 2 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
 	local expected_buffer = {
 		"- Foo",
+		"",
 		"Bar",
+		"",
+		"- Baz",
 	}
 
 	eq(result_buffer, expected_buffer)
+
+	local result_cursor_coords = child.api.nvim_win_get_cursor(0)
+	local expected_cursor_coords = { 3, 2 }
+
+	eq(result_cursor_coords, expected_cursor_coords)
 end
 
 T["normal"]["outdentation understands multi-line lists"] = function()
@@ -451,12 +460,14 @@ T["visual"]["over-outdentation should destroy list elements"] = function()
 	child.api.nvim_win_set_cursor(0, { 4, 0 })
 	child.type_keys("V2k10<lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 7, true)
 	local expected_buffer = {
 		"1. Foo",
+		"",
 		"Bar",
 		"Baz",
 		"Noice",
+		"",
 		"1. Sheesh",
 	}
 
