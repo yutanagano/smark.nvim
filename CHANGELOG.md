@@ -14,9 +14,9 @@
   - For example, smark now works so that when adding a new line (using <CR> or
     o) inside of a task list block, the parent level item becomes marked as
     incomplete (because there is now at least one child that is incomplete)
-- [ ] Add method to toggle task list:
-  - [ ] For normal mode
-  - [ ] For visual mode
+- [x] Add method to toggle task list:
+  - [x] For normal mode
+  - [x] For visual mode
 - [ ] Add method to toggle between lists and standard paragraphs
 - [ ] Make it so that when list elements are fully outdented (they are no
       longer list elements), empty lines are added in the spaces between any
