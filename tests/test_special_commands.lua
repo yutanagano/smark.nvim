@@ -83,6 +83,27 @@ T["normal"]["<leader>lx toggles completion status for task list elements along w
 	eq(result_buffer, expected_buffer)
 end
 
+T["normal"]["<leader>lt toggles task list items for contiguous siblings"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. Foo",
+		"   - Bar",
+		"     1. Baz",
+		"   - Sheesh",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.type_keys(" lt")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
+	local expected_buffer = {
+		"1. Foo",
+		"   - [ ] Bar",
+		"     1. Baz",
+		"   - [ ] Sheesh",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["visual"] = new_set()
 
 T["visual"]["<leader>lo toggles ordered type"] = function()
@@ -122,6 +143,27 @@ T["visual"]["<leader>lx toggles completion status"] = function()
 		"1. [x] Foo",
 		"   - [x] Bar",
 		"   - [x] Baz",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["visual"]["task item toggle should work in visual mode"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"1. Foo",
+		"   - Bar",
+		"     1. Baz",
+		"   - Sheesh",
+	})
+	child.api.nvim_win_set_cursor(0, { 2, 0 })
+	child.type_keys("Vj lt")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
+	local expected_buffer = {
+		"1. Foo",
+		"   - [ ] Bar",
+		"     1. [ ] Baz",
+		"   - Sheesh",
 	}
 
 	eq(result_buffer, expected_buffer)
