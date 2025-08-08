@@ -20,10 +20,12 @@ function M.setup(_)
 			vim.keymap.set("n", "<leader>lf", callback.normal_format, { buffer = true })
 			vim.keymap.set("n", "<leader>lo", callback.normal_ordered, { buffer = true })
 			vim.keymap.set("n", "<leader>lx", callback.normal_checkbox, { buffer = true })
+			vim.keymap.set("n", "<leader>lt", callback.normal_task, { buffer = true })
 			vim.keymap.set("x", ">", callback.visual_indent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<", callback.visual_unindent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lo", callback.visual_ordered, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lx", callback.visual_checkbox, { expr = true, buffer = true })
+			vim.keymap.set("x", "<leader>lt", callback.visual_task, { expr = true, buffer = true })
 		end,
 	})
 end
@@ -181,6 +183,17 @@ function callback.normal_checkbox()
 	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds)
 end
 
+function callback.normal_task()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = buffer.get_list_block_around_cursor()
+
+	if li_block_bounds == nil then
+		return
+	end
+
+	list_manipulation.toggle_normal_task(li_block, li_cursor_coords)
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds)
+end
+
 function callback.visual_indent()
 	local li_block_bounds = buffer.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
@@ -242,6 +255,22 @@ function callback.visual_checkbox()
 	end
 
 	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_checkbox"
+	return "g@"
+end
+
+function callback.visual_task()
+	local li_block_bounds = buffer.get_list_block_around_cursor()
+	local highlight_bound_row = vim.fn.getpos("v")[2]
+
+	if
+		li_block_bounds == nil
+		or highlight_bound_row < li_block_bounds.upper
+		or highlight_bound_row > li_block_bounds.lower
+	then
+		return
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_task"
 	return "g@"
 end
 
