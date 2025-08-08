@@ -86,7 +86,7 @@ end
 ---the list block, otherwise this can cause undefined behaviour.
 ---
 ---@param li_block ListItem[]
----@param start_index integer index of first list item to unindent
+---@param start_index integer index of first list item to indent
 ---@param end_index integer index of last list item to indent
 ---@param li_cursor_coords? LiCursorCoords
 function M.apply_indent(li_block, start_index, end_index, li_cursor_coords)
@@ -140,7 +140,7 @@ end
 ---
 ---@param li_block ListItem[]
 ---@param start_index integer 1-indexed number of first line to unindent
----@param end_index integer 1-indexed number of last line to indent
+---@param end_index integer 1-indexed number of last line to unindent
 ---@param li_cursor_coords? LiCursorCoords
 function M.apply_unindent(li_block, start_index, end_index, li_cursor_coords)
 	local root_num_spaces = li_block[1].indent_rules[#li_block[1].indent_rules].num_spaces
@@ -241,8 +241,8 @@ end
 ---bounds.
 ---
 ---@param li_block ListItem[]
----@param start_index integer 1-indexed number of first line to unindent
----@param end_index integer 1-indexed number of last line to indent
+---@param start_index integer 1-indexed number of first line of selection
+---@param end_index integer 1-indexed number of last line of selection
 ---@param li_cursor_coords LiCursorCoords
 function M.toggle_visual_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
@@ -311,7 +311,7 @@ end
 
 ---For a given region within a list block containing task list elements, toggle
 ---whether they are marked as completed. This edits li_block in place to
----reflect the changes. The ordered type is toggled for the list elements
+---reflect the changes. The completion status is toggled for the list elements
 ---between start_index and end_index. For any list elements in the range that
 ---are not of a checkbox type, this results in a no-op. The completion status
 ---is toggled to the opposite type from that of the list element that is under
@@ -319,8 +319,8 @@ end
 ---start_index and end_index are within bounds.
 ---
 ---@param li_block ListItem[]
----@param start_row integer 1-indexed number of first line to unindent
----@param end_row integer 1-indexed number of last line to indent
+---@param start_row integer 1-indexed number of first line of selection
+---@param end_row integer 1-indexed number of last line of selection
 ---@param li_cursor_coords LiCursorCoords
 function M.toggle_visual_checkbox(li_block, start_row, end_row, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
@@ -387,6 +387,32 @@ function M.toggle_normal_task(li_block, li_cursor_coords)
 			end
 		end
 	end
+
+	format.sanitise_completion_statuses(li_block)
+end
+
+---For a given region within a list block, toggle whether they are task list
+---elements. This edits li_block in place to reflect the changes. The ordered
+---type is toggled for the list elements between start_index and end_index. If
+---the list elemen under the cursor when calling this method is already a task
+---list item, then the selection is all toggled to become non-task list
+---elements, and vice versa. Only call this function after first fixing format.
+---Ensure that start_index and end_index are within bounds.
+---
+---@param li_block ListItem[]
+---@param start_row integer 1-indexed number of first line of selection
+---@param end_row integer 1-indexed number of last line of selection
+---@param li_cursor_coords LiCursorCoords
+function M.toggle_visual_task(li_block, start_row, end_row, li_cursor_coords)
+	local cursor_li = li_block[li_cursor_coords.list_index]
+	local target_is_task_status = not cursor_li.is_task
+
+	for li_index = start_row, end_row do
+		local current_li = li_block[li_index]
+		current_li.is_task = target_is_task_status
+	end
+
+	format.sanitise_completion_statuses(li_block)
 end
 
 return M

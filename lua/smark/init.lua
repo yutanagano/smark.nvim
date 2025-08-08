@@ -25,6 +25,7 @@ function M.setup(_)
 			vim.keymap.set("x", "<", callback.visual_unindent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lo", callback.visual_ordered, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lx", callback.visual_checkbox, { expr = true, buffer = true })
+			vim.keymap.set("x", "<leader>lt", callback.visual_task, { expr = true, buffer = true })
 		end,
 	})
 end
@@ -254,6 +255,22 @@ function callback.visual_checkbox()
 	end
 
 	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_checkbox"
+	return "g@"
+end
+
+function callback.visual_task()
+	local li_block_bounds = buffer.get_list_block_around_cursor()
+	local highlight_bound_row = vim.fn.getpos("v")[2]
+
+	if
+		li_block_bounds == nil
+		or highlight_bound_row < li_block_bounds.upper
+		or highlight_bound_row > li_block_bounds.lower
+	then
+		return
+	end
+
+	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_task"
 	return "g@"
 end
 
