@@ -26,6 +26,10 @@ lists. It has an opinionated design with the following principles:
   - Insert mode: `<C-t>` indents, `<C-d>` outdents
   - Normal mode: `>>`/`>` indents, `<<`/`<` outdents
   - Visual mode: `>` indents, `<` outdents
+- List items that are fully outdented are converted into normal paragraphs:
+  - Smark automatically inserts empty lines between the new paragraph and any
+    adjacent list blocks, so that Markdown parsers do not confuse the paragraph
+    as part of the content of multi-line lists
 - Easy toggling of ordered / unordered list types with `<leader>lo` in normal
   and visual modes
 - Easy toggling of task item completion status `<leader>lx` in normal and
