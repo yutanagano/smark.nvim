@@ -207,11 +207,33 @@ end
 ---@param li_block_bounds TextBlockBounds
 ---@param li_cursor_coords? LiCursorCoords
 function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
+	---@type TextBlockBounds|nil
+	local change_guarantee_block = nil
+	local previous_li_fully_outdented = false
 	local write_time_lines = {}
 	for _, li in ipairs(li_block) do
 		local li_as_strings = list_item.to_lines(li)
+
+		if
+			(previous_li_fully_outdented and #li.indent_rules > 0)
+			or (not previous_li_fully_outdented and #li.indent_rules == 0)
+		then
+			table.insert(write_time_lines, "")
+			if change_guarantee_block == nil then
+				change_guarantee_block = { upper = #write_time_lines, lower = #write_time_lines }
+			else
+				change_guarantee_block.lower = #write_time_lines
+			end
+		end
+
 		for _, s in ipairs(li_as_strings) do
 			table.insert(write_time_lines, s)
+		end
+
+		if #li.indent_rules == 0 then
+			previous_li_fully_outdented = true
+		else
+			previous_li_fully_outdented = false
 		end
 	end
 
@@ -227,19 +249,30 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor
 
 	assert(li_cursor_coords ~= nil, "li_cursor_coords must be supplied if active changes have been made to the text")
 
-	local relative_row = cursor.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block)
+	local new_lines
+	if change_guarantee_block == nil then
+		new_lines = 1
+		local cursor_line_index = cursor.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block)
+		change_guarantee_block = { upper = cursor_line_index, lower = cursor_line_index }
+	else
+		new_lines = 2
+	end
 
 	for i, s in ipairs(write_time_lines) do
 		local absolute_ln = li_block_bounds.upper + i - 1
 
-		if i < relative_row then
+		if i < change_guarantee_block.upper then
 			if read_time_lines[i] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
-		elseif i == relative_row then
+		elseif i == change_guarantee_block.upper then
+			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
+		elseif i > change_guarantee_block.upper and i < change_guarantee_block.lower then
+			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
+		elseif i == change_guarantee_block.lower then
 			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
 		else
-			if read_time_lines[i - 1] ~= s then
+			if read_time_lines[i - new_lines] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
 		end

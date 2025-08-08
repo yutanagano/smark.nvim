@@ -46,7 +46,7 @@ function M.visual_indent()
 end
 
 function M.visual_unindent()
-	local li_block_bounds, li_block, read_time_lines = buffer.get_list_block_around_cursor()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
 	local start_row = vim.fn.getpos("'<")[2]
@@ -57,7 +57,7 @@ function M.visual_unindent()
 	for _ = 1, vim.v.count1 do
 		list_manipulation.apply_unindent(li_block, start_index, end_index)
 	end
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds)
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
 end
 
 function M.visual_toggle_ordered()
