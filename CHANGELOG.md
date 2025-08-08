@@ -11,23 +11,23 @@
 - [x] Make inference of task item completion status robust:
   - In general, after any smark-driven edit, the completion statuses of all
     list items in the current list block remain sane
-  - For example, smark now works so that when adding a new line (using <CR> or
-    o) inside of a task list block, the parent level item becomes marked as
+  - For example, smark now works so that when adding a new line (using \<CR\>
+    or o) inside of a task list block, the parent level item becomes marked as
     incomplete (because there is now at least one child that is incomplete)
 - [x] Add method to toggle task list:
   - [x] For normal mode
   - [x] For visual mode
-- [ ] Add method to toggle between lists and standard paragraphs
 - [ ] Make it so that when list elements are fully outdented (they are no
       longer list elements), empty lines are added in the spaces between any
       adjacent list elements and normal paragraph lines
+- [ ] Add method to toggle between lists and standard paragraphs
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
 
 ## Version 0.1
 
-- [x] Automatically insert bullets with <CR>
+- [x] Automatically insert bullets with \<CR\>
 - [x] Handle insertion with "o"
 - [x] Handle insertion from middle of line
 - [x] Handle end list if list item empty
@@ -37,7 +37,7 @@
 - [x] Handle block auto-formatting
 - [x] Handle indentation:
   - [x] Automatically increase indentation on ending bullet with colon
-  - [x] Override <C-t> and <C-d> in insert mode
+  - [x] Override \<C-t\> and \<C-d\> in insert mode
   - [x] Override >> and << commands
   - [x] Override > and < operators in normal mode
   - [x] Override > and < operators in visual mode
@@ -61,7 +61,7 @@
   - [x] Update list item schema to handle multi-line content
   - [x] Update code to scan document and generate list items
   - [x] Update code to write list items to screen
-  - [x] Make sure insert <CR> is working
+  - [x] Make sure insert \<CR\> is working
   - [x] Make sure normal o is working
   - [x] Make sure in/outdent keybinds are working
   - [x] Make sure list formatting / numbering / ticking shortcuts are working
