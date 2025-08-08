@@ -207,11 +207,26 @@ end
 ---@param li_block_bounds TextBlockBounds
 ---@param li_cursor_coords? LiCursorCoords
 function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
+	local previous_li_fully_outdented = false
 	local write_time_lines = {}
 	for _, li in ipairs(li_block) do
 		local li_as_strings = list_item.to_lines(li)
+
+		if
+			(previous_li_fully_outdented and #li.indent_rules > 0)
+			or (not previous_li_fully_outdented and #li.indent_rules == 0)
+		then
+			table.insert(write_time_lines, "")
+		end
+
 		for _, s in ipairs(li_as_strings) do
 			table.insert(write_time_lines, s)
+		end
+
+		if #li.indent_rules == 0 then
+			previous_li_fully_outdented = true
+		else
+			previous_li_fully_outdented = false
 		end
 	end
 
