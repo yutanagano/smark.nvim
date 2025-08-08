@@ -17,7 +17,7 @@
 - [x] Add method to toggle task list:
   - [x] For normal mode
   - [x] For visual mode
-- [ ] Make it so that when list elements are fully outdented (they are no
+- [x] Make it so that when list elements are fully outdented (they are no
       longer list elements), empty lines are added in the spaces between any
       adjacent list elements and normal paragraph lines
 - [ ] Add method to toggle between lists and standard paragraphs
