@@ -34,6 +34,12 @@ lists. It has an opinionated design with the following principles:
     tree (e.g. marking a task complete will automatically mark all of its
     children as complete, and its parent as well if all its siblings are also
     complete)
+- Any smark-driven edit maintains the sanity of task list item trees:
+  - E.g. if you make a new (and hence incomplete) task list item under a parent
+    task list item, the parent item will automatically be marked as incomplete,
+    because it now contains a task item that is incomplete
+- Easy toggling of list items as plain items or task items with `<leader>lt` in
+  normal and visual modes
 - Manually trigger the auto-formatting of the list block around the cursor with
   `<leader>lf`
 - Infers and updates indentation rules across the current list block when edits
