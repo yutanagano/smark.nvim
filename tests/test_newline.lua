@@ -308,6 +308,29 @@ T["insert_CR"]["sets parent to complete if appropriate"] = function()
 	eq(result_buffer, expected_buffer)
 end
 
+T["insert_CR"]["can automatically insert separating lines and new list item simultaneously"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"This should be a normal paragraph here.",
+		"- There should be a separating line above",
+		"This should become part of the list content",
+		"- A new list item should be made below",
+	})
+	child.api.nvim_win_set_cursor(0, { 4, 0 })
+	child.type_keys("A<CR>Foobar")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+	local expected_buffer = {
+		"This should be a normal paragraph here.",
+		"",
+		"- There should be a separating line above",
+		"  This should become part of the list content",
+		"- A new list item should be made below",
+		"- Foobar",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["normal_o"] = new_set()
 
 T["normal_o"]["auto-generates a new list element"] = function()

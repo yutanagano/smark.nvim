@@ -243,7 +243,7 @@ T["normal"]["outdentation at root destroys list element"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 2 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"",
