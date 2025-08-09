@@ -20,7 +20,15 @@
 - [x] Make it so that when list elements are fully outdented (they are no
       longer list elements), empty lines are added in the spaces between any
       adjacent list elements and normal paragraph lines
-- [ ] Add method to toggle between lists and standard paragraphs
+- [ ] Add method to toggle between lists and standard paragraphs:
+  - [ ] For normal mode:
+    - [x] Paragraph to list
+    - [ ] List to paragraph
+  - [ ] For visual mode:
+    - [ ] Paragraph to list
+    - [ ] List to paragraph
+- [ ] Change behaviour of \<CR\> to demote empty bullets even if there are more
+      bullets in front of it
 - [ ] Implement configuration options:
   - [ ] Auto-numbering
   - [ ] List type on indenting
