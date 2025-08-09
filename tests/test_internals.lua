@@ -53,7 +53,7 @@ T["insert_CR"]["rewrite_lines"] = function()
 		"  decision maker must not be motivated by a desire to bring about the patient's",
 		"  death",
 	}
-	child.api.nvim_buf_set_lines(0, 0, 0, true, original_lines)
+	child.api.nvim_buf_set_lines(0, 0, -2, true, original_lines)
 	child.api.nvim_win_set_cursor(0, { 15, 0 })
 	child.type_keys("A<CR>")
 
@@ -94,7 +94,7 @@ T["insert_CR"]["rewrite_lines and check buffer contents"] = function()
 		"  5. For children if still inconclusive, refer to paediatric respiratory",
 		"     physician",
 	}
-	child.api.nvim_buf_set_lines(0, 0, 0, true, original_lines)
+	child.api.nvim_buf_set_lines(0, 0, -2, true, original_lines)
 	child.api.nvim_win_set_cursor(0, { 4, 0 })
 	child.type_keys("A<CR>Test<CR>Foobarbaz")
 
@@ -115,7 +115,7 @@ T["insert_CR"]["rewrite_lines and check buffer contents"] = function()
 		"  5. For children if still inconclusive, refer to paediatric respiratory",
 		"     physician",
 	}
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 15, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 
 	eq(result_buffer, expected_buffer)
 
@@ -176,7 +176,7 @@ T["insert_CR"]["rewrite_lines with full outdentation"] = function()
 		"  decision maker must not be motivated by a desire to bring about the patient's",
 		"  death",
 	}
-	child.api.nvim_buf_set_lines(0, 0, 0, true, original_lines)
+	child.api.nvim_buf_set_lines(0, 0, -2, true, original_lines)
 	child.api.nvim_win_set_cursor(0, { 13, 0 })
 	child.type_keys("<lt><lt>")
 
