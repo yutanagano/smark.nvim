@@ -9,12 +9,13 @@ local M = {}
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
+---@return boolean new_line_at_cursor
 function M.apply_insert_newline(li_block, li_cursor_coords)
 	local current_li = li_block[li_cursor_coords.list_index]
 
 	if li_cursor_coords.list_index == #li_block and list_item.content_is_empty(current_li) then
 		M.apply_unindent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
-		return
+		return false
 	end
 
 	local content_after_cursor = list_item.get_content_after_cursor(current_li, li_cursor_coords)
@@ -41,6 +42,8 @@ function M.apply_insert_newline(li_block, li_cursor_coords)
 	if list_item.content_ends_in_colon(current_li) and list_item.content_is_empty(new_li) then
 		M.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 	end
+
+	return true
 end
 
 ---Edit li_array and li_cursor_coords in place to reflect the entry of "o" in

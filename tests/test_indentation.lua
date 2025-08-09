@@ -474,4 +474,40 @@ T["visual"]["over-outdentation should destroy list elements"] = function()
 	eq(result_buffer, expected_buffer)
 end
 
+T["visual"]["full outdentation inserts empty separator lines wherever necessary"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"- Foo:",
+		"  - Bar",
+		"- Foo:",
+		"  - Bar",
+		"- Baz",
+		"",
+		"Sheesh",
+	})
+	child.api.nvim_win_set_cursor(0, { 1, 0 })
+	child.type_keys("Vip<lt>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+	local expected_buffer = {
+		"Foo:",
+		"",
+		"- Bar",
+		"",
+		"Foo:",
+		"",
+		"- Bar",
+		"",
+		"Baz",
+		"",
+		"Sheesh",
+	}
+
+	eq(result_buffer, expected_buffer)
+
+	local result_cursor_coords = child.api.nvim_win_get_cursor(0)
+	local expected_cursor_coords = { 1, 0 }
+
+	eq(result_cursor_coords, expected_cursor_coords)
+end
+
 return T
