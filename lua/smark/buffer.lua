@@ -252,7 +252,9 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_co
 	if li_block_bounds.upper > 1 then
 		local line_preceding_block =
 			vim.api.nvim_buf_get_lines(0, li_block_bounds.upper - 2, li_block_bounds.upper - 1, true)[1]
-		preceded_by_normal_paragraph = string.match(line_preceding_block, "^%s*$") == nil
+		if string.match(line_preceding_block, "^%s*$") == nil then
+			preceded_by_normal_paragraph = true
+		end
 	end
 
 	local current_line_index = 1
