@@ -203,31 +203,39 @@ end
 ---specified by bounds.
 ---
 ---@param li_block ListItem[]
----@param read_time_lines string[] Array containing original text contents of list block
+---@param read_time_lines string[] Array containing original text contents of
+---list block
 ---@param li_block_bounds TextBlockBounds
----@param li_cursor_coords? LiCursorCoords
-function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords)
-	---@type TextBlockBounds|nil
-	local change_guarantee_block = nil
+---@param li_cursor_coords LiCursorCoords
+---@param new_line_at_cursor boolean Set to true if new line created at current
+---cursor position
+function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, new_line_at_cursor)
+	local new_line_numbers = {}
+	if new_line_at_cursor then
+		table.insert(new_line_numbers, cursor.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block))
+	end
+
 	local previous_li_fully_outdented = false
+	local current_line_index = 1
 	local write_time_lines = {}
-	for _, li in ipairs(li_block) do
+	for li_index, li in ipairs(li_block) do
 		local li_as_strings = list_item.to_lines(li)
 
 		if
-			(previous_li_fully_outdented and #li.indent_rules > 0)
-			or (not previous_li_fully_outdented and #li.indent_rules == 0)
+			li_index > 1
+			and (
+				(previous_li_fully_outdented and #li.indent_rules > 0)
+				or (not previous_li_fully_outdented and #li.indent_rules == 0)
+			)
 		then
 			table.insert(write_time_lines, "")
-			if change_guarantee_block == nil then
-				change_guarantee_block = { upper = #write_time_lines, lower = #write_time_lines }
-			else
-				change_guarantee_block.lower = #write_time_lines
-			end
+			table.insert(new_line_numbers, current_line_index)
+			current_line_index = current_line_index + 1
 		end
 
 		for _, s in ipairs(li_as_strings) do
 			table.insert(write_time_lines, s)
+			current_line_index = current_line_index + 1
 		end
 
 		if #li.indent_rules == 0 then
@@ -238,43 +246,31 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor
 	end
 
 	if #write_time_lines == #read_time_lines then
-		for i, s in ipairs(write_time_lines) do
-			local absolute_ln = li_block_bounds.upper + i - 1
-			if read_time_lines[i] ~= s then
+		for line_index, s in ipairs(write_time_lines) do
+			local absolute_ln = li_block_bounds.upper + line_index - 1
+			if read_time_lines[line_index] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
 		end
 		return
 	end
 
-	assert(li_cursor_coords ~= nil, "li_cursor_coords must be supplied if active changes have been made to the text")
-
-	local new_lines
-	if change_guarantee_block == nil then
-		new_lines = 1
-		local cursor_line_index = cursor.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block)
-		change_guarantee_block = { upper = cursor_line_index, lower = cursor_line_index }
-	else
-		new_lines = 2
-	end
+	table.sort(new_line_numbers, function(a, b)
+		return a > b
+	end)
+	local read_time_line_index = 1
 
 	for i, s in ipairs(write_time_lines) do
 		local absolute_ln = li_block_bounds.upper + i - 1
 
-		if i < change_guarantee_block.upper then
-			if read_time_lines[i] ~= s then
-				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
-			end
-		elseif i == change_guarantee_block.upper then
+		if i == new_line_numbers[#new_line_numbers] then
 			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
-		elseif i > change_guarantee_block.upper and i < change_guarantee_block.lower then
-			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
-		elseif i == change_guarantee_block.lower then
-			vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln - 1, true, { s })
+			table.remove(new_line_numbers)
 		else
-			if read_time_lines[i - new_lines] ~= s then
+			if read_time_lines[read_time_line_index] ~= s then
 				vim.api.nvim_buf_set_lines(0, absolute_ln - 1, absolute_ln, true, { s })
 			end
+			read_time_line_index = read_time_line_index + 1
 		end
 	end
 end
