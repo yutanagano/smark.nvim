@@ -21,6 +21,7 @@ function M.setup(_)
 			vim.keymap.set("n", "<leader>lo", callback.normal_ordered, { buffer = true })
 			vim.keymap.set("n", "<leader>lx", callback.normal_checkbox, { buffer = true })
 			vim.keymap.set("n", "<leader>lt", callback.normal_task, { buffer = true })
+			vim.keymap.set("n", "<leader>ll", callback.normal_list, { buffer = true })
 			vim.keymap.set("x", ">", callback.visual_indent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<", callback.visual_unindent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lo", callback.visual_ordered, { expr = true, buffer = true })
@@ -192,6 +193,30 @@ function callback.normal_task()
 
 	list_manipulation.toggle_normal_task(li_block, li_cursor_coords)
 	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+end
+
+function callback.normal_list()
+	local bounds, lines = buffer.get_current_paragraph()
+
+	if bounds == nil then
+		return
+	end
+
+	---@type ListItem[]
+	local li_block = {}
+	for _, line in ipairs(lines) do
+		table.insert(li_block, {
+			indent_rules = {
+				{ is_ordered = false, num_spaces = 0 },
+			},
+			is_task = false,
+			is_completed = false,
+			position_number = 1,
+			content = { line },
+		})
+	end
+
+	buffer.draw_list_items(li_block, lines, bounds)
 end
 
 function callback.visual_indent()
