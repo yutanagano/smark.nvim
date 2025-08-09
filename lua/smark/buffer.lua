@@ -151,12 +151,12 @@ function M.pattern_match_line(line_num)
 		pattern = "^((%s*)[%-%*%+]%s+)(.*)"
 		is_ordered = false
 		preamble, indent, content_line = string.match(text, pattern)
+	end
 
-		if preamble == nil then
-			pattern = "^(%s*)(.*)"
-			preamble, content_line = string.match(text, pattern)
-			return nil, text, content_line, string.len(preamble)
-		end
+	if preamble == nil then
+		pattern = "^(%s*)(.*)"
+		preamble, content_line = string.match(text, pattern)
+		return nil, text, content_line, string.len(preamble)
 	end
 
 	local read_time_preamble_len = string.len(preamble)
@@ -197,6 +197,39 @@ function M.pattern_match_task_root(text)
 	local is_completed = completion == "x" or completion == "X"
 
 	return true, is_completed, content_line, string.len(preamble)
+end
+
+---@return TextBlockBounds|nil paragraph_bounds
+---@return string[] paragraph_lines
+function M.get_current_paragraph()
+	local cursor_row, cursor_col = table.unpack(vim.api.nvim_win_get_cursor(0))
+	local cursor_coords = { row = cursor_row, col = cursor_col }
+	local paragraph_bounds = { upper = cursor_row, lower = cursor_row }
+	local paragraph_lines = {}
+
+	for line_num = cursor_coords.row, 1, -1 do
+		local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
+		if line == "" then
+			break
+		end
+		table.insert(paragraph_lines, 1, line)
+		paragraph_bounds.upper = line_num
+	end
+
+	if #paragraph_lines == 0 then
+		return nil, {}
+	end
+
+	for line_num = cursor_coords.row + 1, vim.api.nvim_buf_line_count(0) do
+		local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
+		if line == "" then
+			break
+		end
+		table.insert(paragraph_lines, line)
+		paragraph_bounds.lower = line_num
+	end
+
+	return paragraph_bounds, paragraph_lines
 end
 
 ---Draw out string representations of list items in li_array between the lines
