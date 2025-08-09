@@ -16,14 +16,14 @@ local T = new_set({
 T["insert"] = new_set()
 
 T["insert"]["<C-t> indents normally outside of list blocks"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"Foo",
 		"Bar",
 	})
 	child.api.nvim_win_set_cursor(0, { 1, 0 })
 	child.type_keys("a<C-t>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"    Foo",
 		"Bar",
@@ -33,25 +33,25 @@ T["insert"]["<C-t> indents normally outside of list blocks"] = function()
 end
 
 T["insert"]["<C-t> indents"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, { "- Foo", "- Bar" })
+	child.api.nvim_buf_set_lines(0, 0, -2, true, { "- Foo", "- Bar" })
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("a<C-t>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = { "- Foo", "  - Bar" }
 
 	eq(result_buffer, expected_buffer)
 end
 
 T["insert"]["<C-d> outdents normally outside of list blocks"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"    Foo",
 		"    Bar",
 	})
 	child.api.nvim_win_set_cursor(0, { 1, 0 })
 	child.type_keys("a<C-d>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"Foo",
 		"    Bar",
@@ -61,11 +61,11 @@ T["insert"]["<C-d> outdents normally outside of list blocks"] = function()
 end
 
 T["insert"]["<C-d> outdents"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, { "- Foo", "  - Bar" })
+	child.api.nvim_buf_set_lines(0, 0, -2, true, { "- Foo", "  - Bar" })
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("a<C-d>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = { "- Foo", "- Bar" }
 
 	eq(result_buffer, expected_buffer)
@@ -74,25 +74,25 @@ end
 T["normal"] = new_set()
 
 T["normal"][">> indents"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, { "- Foo", "- Bar" })
+	child.api.nvim_buf_set_lines(0, 0, -2, true, { "- Foo", "- Bar" })
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(">>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = { "- Foo", "  - Bar" }
 
 	eq(result_buffer, expected_buffer)
 end
 
 T["normal"]["indentation without preceding sibling is a no-op"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo:",
 		"  - Bar",
 	})
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(">>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo:",
 		"  - Bar",
@@ -102,7 +102,7 @@ T["normal"]["indentation without preceding sibling is a no-op"] = function()
 end
 
 T["normal"]["indentation should recognise multi-line lists"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"- Bar",
 		"  Baz",
@@ -110,7 +110,7 @@ T["normal"]["indentation should recognise multi-line lists"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(">>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"  - Bar",
@@ -121,7 +121,7 @@ T["normal"]["indentation should recognise multi-line lists"] = function()
 end
 
 T["normal"][">> with a preceding count works on multiple lines"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"- Bar",
 		"- Baz",
@@ -129,7 +129,7 @@ T["normal"][">> with a preceding count works on multiple lines"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("2>>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"  - Bar",
@@ -140,7 +140,7 @@ T["normal"][">> with a preceding count works on multiple lines"] = function()
 end
 
 T["normal"]["indentation automatically detects list ordered type of nested level"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"- Bar",
 		"  1. Baz",
@@ -148,7 +148,7 @@ T["normal"]["indentation automatically detects list ordered type of nested level
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(">>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"  1. Bar",
@@ -159,7 +159,7 @@ T["normal"]["indentation automatically detects list ordered type of nested level
 end
 
 T["normal"]["indentation at root moves whole tree up"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"  1. Bar",
 		"     - Baz",
@@ -167,7 +167,7 @@ T["normal"]["indentation at root moves whole tree up"] = function()
 	child.api.nvim_win_set_cursor(0, { 1, 0 })
 	child.type_keys(">>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"  - Foo",
 		"    1. Bar",
@@ -178,14 +178,14 @@ T["normal"]["indentation at root moves whole tree up"] = function()
 end
 
 T["normal"]["<< outdents"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"  - Bar",
 	})
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 2, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"- Bar",
@@ -195,7 +195,7 @@ T["normal"]["<< outdents"] = function()
 end
 
 T["normal"]["<< with a preceding number outdents multiple lines"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo:",
 		"  - Bar",
 		"  - Baz",
@@ -203,7 +203,7 @@ T["normal"]["<< with a preceding number outdents multiple lines"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("2<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo:",
 		"- Bar",
@@ -214,7 +214,7 @@ T["normal"]["<< with a preceding number outdents multiple lines"] = function()
 end
 
 T["normal"]["outdentation drags along subtree"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"1. Foo:",
 		"   - Bar:",
 		"     - Baz",
@@ -223,7 +223,7 @@ T["normal"]["outdentation drags along subtree"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 4, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"1. Foo:",
 		"2. Bar:",
@@ -235,7 +235,7 @@ T["normal"]["outdentation drags along subtree"] = function()
 end
 
 T["normal"]["outdentation at root destroys list element"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"- Bar",
 		"- Baz",
@@ -261,7 +261,7 @@ T["normal"]["outdentation at root destroys list element"] = function()
 end
 
 T["normal"]["outdentation understands multi-line lists"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo:",
 		"  - Bar",
 		"    Baz",
@@ -269,7 +269,7 @@ T["normal"]["outdentation understands multi-line lists"] = function()
 	child.api.nvim_win_set_cursor(0, { 3, 0 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo:",
 		"- Bar",
@@ -280,7 +280,7 @@ T["normal"]["outdentation understands multi-line lists"] = function()
 end
 
 T["normal"]["outdentation at the root on hyperindented lists moves the whole tree left"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"   - Foo:",
 		"     1. Bar:",
 		"        - Baz",
@@ -288,7 +288,7 @@ T["normal"]["outdentation at the root on hyperindented lists moves the whole tre
 	child.api.nvim_win_set_cursor(0, { 1, 0 })
 	child.type_keys("<lt><lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 3, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		" - Foo:",
 		"   1. Bar:",
@@ -299,7 +299,7 @@ T["normal"]["outdentation at the root on hyperindented lists moves the whole tre
 end
 
 T["normal"]["full outdentation at the root of a list not starting at the first line of the buffer should not add a separator line above if the line preceding the list block is empty"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"Foo",
 		"",
 		"- Bar",
@@ -321,7 +321,7 @@ T["normal"]["full outdentation at the root of a list not starting at the first l
 end
 
 T["normal"]["> is an indent operator"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"1. Foo",
 		"2. Bar",
 		"3. Baz",
@@ -331,7 +331,7 @@ T["normal"]["> is an indent operator"] = function()
 	child.api.nvim_win_set_cursor(0, { 2, 0 })
 	child.type_keys(">2j")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"1. Foo",
 		"   1. Bar",
@@ -344,7 +344,7 @@ T["normal"]["> is an indent operator"] = function()
 end
 
 T["normal"]["< is an outdent operator"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"1. Foo",
 		"   1. Noice",
 		"   2. Sheesh",
@@ -354,7 +354,7 @@ T["normal"]["< is an outdent operator"] = function()
 	child.api.nvim_win_set_cursor(0, { 3, 0 })
 	child.type_keys("<lt>k")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"1. Foo",
 		"2. Noice",
@@ -369,7 +369,7 @@ end
 T["visual"] = new_set()
 
 T["visual"]["> is an indent operator"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"  1. Bar",
 		"- Baz",
@@ -379,7 +379,7 @@ T["visual"]["> is an indent operator"] = function()
 	child.api.nvim_win_set_cursor(0, { 3, 0 })
 	child.type_keys("Vj2>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"  1. Bar",
@@ -392,7 +392,7 @@ T["visual"]["> is an indent operator"] = function()
 end
 
 T["visual"]["indentation automatically infers is_ordered types according to spec"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"  1. Bar",
 		"     - Baz",
@@ -405,7 +405,7 @@ T["visual"]["indentation automatically infers is_ordered types according to spec
 	child.api.nvim_win_set_cursor(0, { 6, 0 })
 	child.type_keys("V2j>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 8, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"- Foo",
 		"  1. Bar",
@@ -419,7 +419,7 @@ T["visual"]["indentation automatically infers is_ordered types according to spec
 
 	eq(result_buffer, expected_buffer)
 
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo",
 		"  1. Bar",
 		"     - Baz",
@@ -433,7 +433,7 @@ T["visual"]["indentation automatically infers is_ordered types according to spec
 	child.api.nvim_win_set_cursor(0, { 6, 0 })
 	child.type_keys("V2j>")
 
-	result_buffer = child.api.nvim_buf_get_lines(0, 0, 8, true)
+	result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	expected_buffer = {
 		"- Foo",
 		"  1. Bar",
@@ -443,13 +443,14 @@ T["visual"]["indentation automatically infers is_ordered types according to spec
 		"  - Boink",
 		"    - Doink",
 		"      1. Yoink",
+		"  - Zoink",
 	}
 
 	eq(result_buffer, expected_buffer)
 end
 
 T["visual"]["< is an outdent operator"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"1. Foo",
 		"   1. Bar",
 		"      - Baz",
@@ -459,7 +460,7 @@ T["visual"]["< is an outdent operator"] = function()
 	child.api.nvim_win_set_cursor(0, { 5, 0 })
 	child.type_keys("V2k2<lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 5, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"1. Foo",
 		"   1. Bar",
@@ -472,7 +473,7 @@ T["visual"]["< is an outdent operator"] = function()
 end
 
 T["visual"]["over-outdentation should destroy list elements"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"1. Foo",
 		"   1. Bar",
 		"      - Baz",
@@ -482,7 +483,7 @@ T["visual"]["over-outdentation should destroy list elements"] = function()
 	child.api.nvim_win_set_cursor(0, { 4, 0 })
 	child.type_keys("V2k10<lt>")
 
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, 7, true)
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
 	local expected_buffer = {
 		"1. Foo",
 		"",
@@ -497,7 +498,7 @@ T["visual"]["over-outdentation should destroy list elements"] = function()
 end
 
 T["visual"]["full outdentation inserts empty separator lines wherever necessary"] = function()
-	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- Foo:",
 		"  - Bar",
 		"- Foo:",
