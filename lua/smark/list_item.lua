@@ -110,6 +110,17 @@ function M.get_empty_like(li)
 	}
 end
 
+---@return ListItem empty_line
+function M.get_empty()
+	return {
+		indent_rules = {},
+		is_task = false,
+		is_completed = false,
+		position_number = 1,
+		content = { "" },
+	}
+end
+
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
 ---@return string[] content_after_cursor The portion of li's content that lies after the cursor
@@ -136,6 +147,7 @@ end
 
 ---Modify a list item's contents, truncating any content that lies after the
 ---cursor.
+---
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
 function M.truncate_content_at_cursor(li, li_cursor_coords)
@@ -157,13 +169,34 @@ function M.truncate_content_at_cursor(li, li_cursor_coords)
 end
 
 ---@param li ListItem
+---@return boolean
 function M.content_is_empty(li)
 	return #li.content == 1 and li.content[1] == ""
 end
 
 ---@param li ListItem
+---@return boolean
 function M.content_ends_in_colon(li)
 	return string.sub(li.content[#li.content], -1) == ":"
+end
+
+---@enum li_type
+M.li_type = {
+	LIST_ITEM = 0,
+	PARAGRAPH = 1,
+	EMPTY = 2,
+}
+
+---@param li ListItem
+---@return li_type
+function M.get_list_type(li)
+	if #li.indent_rules == 0 then
+		if M.content_is_empty(li) then
+			return M.li_type.EMPTY
+		end
+		return M.li_type.PARAGRAPH
+	end
+	return M.li_type.LIST_ITEM
 end
 
 return M

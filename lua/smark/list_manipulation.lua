@@ -9,7 +9,8 @@ local M = {}
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
----@return boolean new_line_at_cursor
+---@return boolean new_line_at_cursor True if new line has been generated at
+---cursor position
 function M.apply_insert_newline(li_block, li_cursor_coords)
 	local current_li = li_block[li_cursor_coords.list_index]
 
