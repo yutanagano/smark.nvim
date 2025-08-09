@@ -21,9 +21,9 @@
       longer list elements), empty lines are added in the spaces between any
       adjacent list elements and normal paragraph lines
 - [ ] Add method to toggle between lists and standard paragraphs:
-  - [ ] For normal mode:
+  - [x] For normal mode:
     - [x] Paragraph to list
-    - [ ] List to paragraph
+    - [x] List to paragraph
   - [ ] For visual mode:
     - [ ] Paragraph to list
     - [ ] List to paragraph
