@@ -213,4 +213,55 @@ T["insert_CR"]["rewrite_lines with full outdentation"] = function()
 	})
 end
 
+T["insert_CR"]["rewrite_lines with simultaneous automatic separator line"] = function()
+	child.lua([[
+		_G._set_lines_calls = {}
+		local orig = vim.api.nvim_buf_set_lines
+		vim.api.nvim_buf_set_lines = function(buf, start, end_, strict, lines)
+			table.insert(_G._set_lines_calls, {buf=buf, start=start, end_=end_, strict=strict, lines=vim.deepcopy(lines)})
+			return orig(buf, start, end_, strict, lines)
+		end
+	]])
+
+	local original_lines = {
+		"Foobarbaz",
+		"- Foo",
+		"- Bar",
+		"- Baz",
+	}
+	child.api.nvim_buf_set_lines(0, 0, -2, true, original_lines)
+	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.type_keys("A<CR>Sheesh")
+
+	local calls = child.lua_get("_G._set_lines_calls")
+
+	eq(#calls, 2)
+	eq(calls[1], {
+		buf = 0,
+		start = 1,
+		end_ = 1,
+		strict = true,
+		lines = { "" },
+	})
+	eq(calls[2], {
+		buf = 0,
+		start = 4,
+		end_ = 4,
+		strict = true,
+		lines = { "- " },
+	})
+
+	local expected_buffer = {
+		"Foobarbaz",
+		"",
+		"- Foo",
+		"- Bar",
+		"- Sheesh",
+		"- Baz",
+	}
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+
+	eq(result_buffer, expected_buffer)
+end
+
 return T
