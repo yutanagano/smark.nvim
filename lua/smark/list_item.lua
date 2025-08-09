@@ -172,7 +172,7 @@ end
 ---@param li ListItem
 ---@return boolean
 function M.is_normal_paragraph(li)
-	return #li.indent_rules == 0 and not M.content_is_empty(li)
+	return #li.indent_rules == 0
 end
 
 return M
