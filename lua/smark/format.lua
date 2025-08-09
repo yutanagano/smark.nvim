@@ -22,14 +22,14 @@ function M.fix(li_block, li_cursor_coords, original_preamble_len)
 			original_preamble_len = list_item.get_preamble_length(li)
 		end
 
-		if li_index == 1 then
+		if #li.indent_rules == 0 then
+			index_counter[1] = 1
+			prev_original_num_spaces = nil
+		elseif li_index == 1 then
 			li.indent_rules = { li.indent_rules[#li.indent_rules] }
 			li.position_number = 1
 			index_counter[1] = 2
 			prev_original_num_spaces = li.indent_rules[1].num_spaces
-		elseif #li.indent_rules == 0 then
-			index_counter[1] = 1
-			prev_original_num_spaces = nil
 		else
 			local li_original_irules = li.indent_rules[#li.indent_rules]
 			local prev_li = li_block[li_index - 1]
