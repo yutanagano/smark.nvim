@@ -131,6 +131,34 @@ T["normal"]["list block toggle should promote whole paragraph with each line int
 	eq(result_buffer, expected_buffer)
 end
 
+T["normal"]["list block toggle should demote whole list block"] = function()
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
+		"Noice",
+		"- Foo",
+		"  - Bar",
+		"    Baz",
+		"- Sheesh",
+		"",
+		"Noice",
+	})
+	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.type_keys(" ll")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+	local expected_buffer = {
+		"Noice",
+		"",
+		"Foo",
+		"Bar",
+		"Baz",
+		"Sheesh",
+		"",
+		"Noice",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["visual"] = new_set()
 
 T["visual"]["<leader>lo toggles ordered type"] = function()
