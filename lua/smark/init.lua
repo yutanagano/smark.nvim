@@ -210,24 +210,48 @@ function callback.normal_task()
 end
 
 function callback.normal_list()
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords = buffer.get_list_block_around_cursor()
+
+	if li_block_bounds ~= nil then
+		for _, li in ipairs(li_block) do
+			li.indent_rules = {}
+		end
+		local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+		buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
+		return
+	end
+
 	local bounds, lines, cursor_coords = buffer.get_current_paragraph()
 
 	if bounds == nil then
 		return
 	end
 
-	---@type ListItem[]
-	local li_block = {}
-	for _, line in ipairs(lines) do
-		table.insert(li_block, {
-			indent_rules = {
-				{ is_ordered = false, num_spaces = 0 },
-			},
-			is_task = false,
-			is_completed = false,
-			position_number = 1,
-			content = { line },
-		})
+	li_block = {}
+
+	while #lines > 0 do
+		local head = table.remove(lines, 1)
+		local head_li_template = buffer.pattern_match_line(head)
+		if head_li_template == nil then
+			table.insert(li_block, {
+				indent_rules = {
+					{ is_ordered = false, num_spaces = 0 },
+				},
+				is_task = false,
+				is_completed = false,
+				position_number = 1,
+				content = { head },
+			})
+		else
+			while #lines > 0 do
+				if buffer.pattern_match_line(lines[1]) ~= nil then
+					break
+				end
+				local continuation = table.remove(lines, 1)
+				table.insert(head_li_template.content, continuation)
+			end
+			table.insert(li_block, head_li_template)
+		end
 	end
 
 	buffer.draw_list_items(li_block, lines, bounds, cursor_coords, false)

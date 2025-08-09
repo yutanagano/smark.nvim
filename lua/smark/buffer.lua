@@ -80,7 +80,8 @@ end
 ---@return integer read_time_preamble_len The original number of characters before the content begins at the current line
 function M.scan_text_around_line(line_num)
 	local buf_line_count = vim.api.nvim_buf_line_count(0)
-	local li_shell, raw_line, content_line, preamble_len = M.pattern_match_line(line_num)
+	local li_shell, raw_line, content_line, preamble_len =
+		M.pattern_match_line(vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1])
 
 	local bounds = { upper = line_num, lower = line_num }
 
@@ -94,7 +95,8 @@ function M.scan_text_around_line(line_num)
 
 	if li == nil then
 		for current_lnum = line_num - 1, 1, -1 do
-			li_shell, raw_line, content_line = M.pattern_match_line(current_lnum)
+			li_shell, raw_line, content_line =
+				M.pattern_match_line(vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1])
 
 			if content_line == "" then
 				break
@@ -116,7 +118,8 @@ function M.scan_text_around_line(line_num)
 	end
 
 	for current_lnum = line_num + 1, buf_line_count do
-		li_shell, raw_line, content_line = M.pattern_match_line(current_lnum)
+		li_shell, raw_line, content_line =
+			M.pattern_match_line(vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1])
 
 		if content_line == "" or li_shell ~= nil then
 			bounds.lower = current_lnum - 1
@@ -136,13 +139,12 @@ function M.scan_text_around_line(line_num)
 	return li, bounds, read_time_lines, preamble_len
 end
 
----@param line_num integer 1-indexed line number to pattern-match
+---@param text string Text of line to pattern match
 ---@return table|nil list_item_shell Table containing incomplete definition of list element if current line looks like a list element root. Nil otherwise.
 ---@return string raw_line Raw content of that line
 ---@return string content_line Content detected in line (excludes any preamble / whitespace)
 ---@return integer read_time_preamble_len Number of characters before the content begins
-function M.pattern_match_line(line_num)
-	local text = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
+function M.pattern_match_line(text)
 	local pattern = "^((%s*)%d+[%.%)]%s+)(.*)"
 	local is_ordered = true
 	local preamble, indent, content_line = string.match(text, pattern)

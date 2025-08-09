@@ -110,6 +110,17 @@ function M.get_empty_like(li)
 	}
 end
 
+---@return ListItem empty_line
+function M.get_empty()
+	return {
+		indent_rules = {},
+		is_task = false,
+		is_completed = false,
+		position_number = 1,
+		content = { "" },
+	}
+end
+
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
 ---@return string[] content_after_cursor The portion of li's content that lies after the cursor
