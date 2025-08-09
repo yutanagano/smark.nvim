@@ -298,6 +298,28 @@ T["normal"]["outdentation at the root on hyperindented lists moves the whole tre
 	eq(result_buffer, expected_buffer)
 end
 
+T["normal"]["full outdentation at the root of a list not starting at the first line of the buffer should not add a separator line above if the line preceding the list block is empty"] = function()
+	child.api.nvim_buf_set_lines(0, 0, 0, true, {
+		"Foo",
+		"",
+		"- Bar",
+		"- Baz",
+	})
+	child.api.nvim_win_set_cursor(0, { 3, 0 })
+	child.type_keys("<lt><lt>")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+	local expected_buffer = {
+		"Foo",
+		"",
+		"Bar",
+		"",
+		"- Baz",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
 T["normal"]["> is an indent operator"] = function()
 	child.api.nvim_buf_set_lines(0, 0, 0, true, {
 		"1. Foo",
