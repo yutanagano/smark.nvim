@@ -136,6 +136,7 @@ end
 
 ---Modify a list item's contents, truncating any content that lies after the
 ---cursor.
+---
 ---@param li ListItem
 ---@param li_cursor_coords LiCursorCoords
 function M.truncate_content_at_cursor(li, li_cursor_coords)
@@ -157,13 +158,21 @@ function M.truncate_content_at_cursor(li, li_cursor_coords)
 end
 
 ---@param li ListItem
+---@return boolean
 function M.content_is_empty(li)
 	return #li.content == 1 and li.content[1] == ""
 end
 
 ---@param li ListItem
+---@return boolean
 function M.content_ends_in_colon(li)
 	return string.sub(li.content[#li.content], -1) == ":"
+end
+
+---@param li ListItem
+---@return boolean
+function M.is_normal_paragraph(li)
+	return #li.indent_rules == 0 and not M.content_is_empty(li)
 end
 
 return M

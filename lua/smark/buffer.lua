@@ -201,6 +201,7 @@ end
 
 ---@return TextBlockBounds|nil paragraph_bounds
 ---@return string[] paragraph_lines
+---@return CursorCoords cursor_coords
 function M.get_current_paragraph()
 	local cursor_row, cursor_col = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row = cursor_row, col = cursor_col }
@@ -217,7 +218,7 @@ function M.get_current_paragraph()
 	end
 
 	if #paragraph_lines == 0 then
-		return nil, {}
+		return nil, {}, cursor_coords
 	end
 
 	for line_num = cursor_coords.row + 1, vim.api.nvim_buf_line_count(0) do
@@ -229,40 +230,48 @@ function M.get_current_paragraph()
 		paragraph_bounds.lower = line_num
 	end
 
-	return paragraph_bounds, paragraph_lines
+	return paragraph_bounds, paragraph_lines, cursor_coords
 end
 
 ---Draw out string representations of list items in li_array between the lines
----specified by bounds.
+---specified by bounds. Also may modify cursor_coords in place (move it down
+---some rows) if new seaparator lines are written above it.
 ---
 ---@param li_block ListItem[]
 ---@param read_time_lines string[] Array containing original text contents of
 ---list block
 ---@param li_block_bounds TextBlockBounds
----@param li_cursor_coords LiCursorCoords
----@param new_line_at_cursor boolean Set to true if new line created at current
----cursor position
-function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, new_line_at_cursor)
+---@param cursor_coords CursorCoords
+---@param new_line_at_cursor boolean Set to true if new line has explicitly
+---been generated at the cursor
+function M.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, new_line_at_cursor)
+	local relative_cursor_line_num = cursor_coords.row - li_block_bounds.upper + 1
 	local new_line_numbers = {}
-	if new_line_at_cursor then
-		table.insert(new_line_numbers, cursor.get_row_relative_to_li_block_bounds(li_cursor_coords, li_block))
+
+	local preceded_by_normal_paragraph = nil
+	if li_block_bounds.upper > 1 then
+		local line_preceding_block =
+			vim.api.nvim_buf_get_lines(0, li_block_bounds.upper - 2, li_block_bounds.upper - 1, true)[1]
+		preceded_by_normal_paragraph = string.match(line_preceding_block, "^%s*$") == nil
 	end
 
-	local previous_li_fully_outdented = false
 	local current_line_index = 1
 	local write_time_lines = {}
-	for li_index, li in ipairs(li_block) do
+	for _, li in ipairs(li_block) do
 		local li_as_strings = list_item.to_lines(li)
 
 		if
-			li_index > 1
+			preceded_by_normal_paragraph ~= nil
 			and (
-				(previous_li_fully_outdented and #li.indent_rules > 0)
-				or (not previous_li_fully_outdented and #li.indent_rules == 0)
+				(preceded_by_normal_paragraph and not list_item.is_normal_paragraph(li))
+				or (not preceded_by_normal_paragraph and list_item.is_normal_paragraph(li))
 			)
 		then
 			table.insert(write_time_lines, "")
 			table.insert(new_line_numbers, current_line_index)
+			if relative_cursor_line_num >= current_line_index then
+				relative_cursor_line_num = relative_cursor_line_num + 1
+			end
 			current_line_index = current_line_index + 1
 		end
 
@@ -271,11 +280,11 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor
 			current_line_index = current_line_index + 1
 		end
 
-		if #li.indent_rules == 0 then
-			previous_li_fully_outdented = true
-		else
-			previous_li_fully_outdented = false
-		end
+		preceded_by_normal_paragraph = list_item.is_normal_paragraph(li)
+	end
+
+	if new_line_at_cursor then
+		table.insert(new_line_numbers, relative_cursor_line_num)
 	end
 
 	if #write_time_lines == #read_time_lines then
@@ -306,6 +315,8 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor
 			read_time_line_index = read_time_line_index + 1
 		end
 	end
+
+	cursor_coords.row = relative_cursor_line_num + li_block_bounds.upper - 1
 end
 
 return M

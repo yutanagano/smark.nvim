@@ -41,9 +41,9 @@ function callback.insert_newline()
 	end
 
 	local new_line_at_cursor = list_manipulation.apply_insert_newline(li_block, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, new_line_at_cursor)
-
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, new_line_at_cursor)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
@@ -57,9 +57,9 @@ function callback.insert_indent()
 	end
 
 	list_manipulation.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
-
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
@@ -78,9 +78,9 @@ function callback.insert_unindent()
 		li_cursor_coords.list_index,
 		li_cursor_coords
 	)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
-
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
@@ -95,8 +95,11 @@ function callback.normal_indent()
 
 	local start_index = li_cursor_coords.list_index
 	local end_index = math.min(#li_block, start_index + vim.v.count1 - 1)
+
 	list_manipulation.apply_indent(li_block, start_index, end_index)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_unindent()
@@ -110,8 +113,11 @@ function callback.normal_unindent()
 
 	local start_index = li_cursor_coords.list_index
 	local end_index = math.min(#li_block, start_index + vim.v.count1 - 1)
+
 	list_manipulation.apply_unindent(li_block, start_index, end_index)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_indent_op()
@@ -145,9 +151,9 @@ function callback.normal_o()
 	end
 
 	list_manipulation.apply_normal_o(li_block, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, true)
-
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, true)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 	vim.cmd("startinsert!")
 end
@@ -159,7 +165,9 @@ function callback.normal_format()
 		return
 	end
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_ordered()
@@ -170,7 +178,9 @@ function callback.normal_ordered()
 	end
 
 	list_manipulation.toggle_normal_ordered_type(li_block, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_checkbox()
@@ -181,7 +191,9 @@ function callback.normal_checkbox()
 	end
 
 	list_manipulation.toggle_normal_checkbox(li_block, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_task()
@@ -192,11 +204,13 @@ function callback.normal_task()
 	end
 
 	list_manipulation.toggle_normal_task(li_block, li_cursor_coords)
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, li_cursor_coords, false)
+	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
+
+	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, false)
 end
 
 function callback.normal_list()
-	local bounds, lines = buffer.get_current_paragraph()
+	local bounds, lines, cursor_coords = buffer.get_current_paragraph()
 
 	if bounds == nil then
 		return
@@ -216,7 +230,7 @@ function callback.normal_list()
 		})
 	end
 
-	buffer.draw_list_items(li_block, lines, bounds)
+	buffer.draw_list_items(li_block, lines, bounds, cursor_coords, false)
 end
 
 function callback.visual_indent()
