@@ -248,26 +248,29 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_co
 	local relative_cursor_line_num = cursor_coords.row - li_block_bounds.upper + 1
 	local new_line_numbers = {}
 
-	local preceded_by_normal_paragraph = nil
+	local preceding_item_type
 	if li_block_bounds.upper > 1 then
 		local line_preceding_block =
 			vim.api.nvim_buf_get_lines(0, li_block_bounds.upper - 2, li_block_bounds.upper - 1, true)[1]
 		if string.match(line_preceding_block, "^%s*$") == nil then
-			preceded_by_normal_paragraph = true
+			preceding_item_type = list_item.li_type.PARAGRAPH
+		else
+			preceding_item_type = list_item.li_type.EMPTY
 		end
+	else
+		preceding_item_type = list_item.li_type.EMPTY
 	end
 
 	local current_line_index = 1
 	local write_time_lines = {}
 	for _, li in ipairs(li_block) do
 		local li_as_strings = list_item.to_lines(li)
+		local current_item_type = list_item.get_list_type(li)
 
 		if
-			preceded_by_normal_paragraph ~= nil
-			and (
-				(preceded_by_normal_paragraph and not list_item.is_normal_paragraph(li))
-				or (not preceded_by_normal_paragraph and list_item.is_normal_paragraph(li))
-			)
+			preceding_item_type ~= list_item.li_type.EMPTY
+			and current_item_type ~= list_item.li_type.EMPTY
+			and preceding_item_type ~= current_item_type
 		then
 			table.insert(write_time_lines, "")
 			table.insert(new_line_numbers, current_line_index)
@@ -282,7 +285,7 @@ function M.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_co
 			current_line_index = current_line_index + 1
 		end
 
-		preceded_by_normal_paragraph = list_item.is_normal_paragraph(li)
+		preceding_item_type = current_item_type
 	end
 
 	if new_line_at_cursor then

@@ -169,10 +169,23 @@ function M.content_ends_in_colon(li)
 	return string.sub(li.content[#li.content], -1) == ":"
 end
 
+---@enum li_type
+M.li_type = {
+	LIST_ITEM = 0,
+	PARAGRAPH = 1,
+	EMPTY = 2,
+}
+
 ---@param li ListItem
----@return boolean
-function M.is_normal_paragraph(li)
-	return #li.indent_rules == 0
+---@return li_type
+function M.get_list_type(li)
+	if #li.indent_rules == 0 then
+		if M.content_is_empty(li) then
+			return M.li_type.EMPTY
+		end
+		return M.li_type.PARAGRAPH
+	end
+	return M.li_type.LIST_ITEM
 end
 
 return M
