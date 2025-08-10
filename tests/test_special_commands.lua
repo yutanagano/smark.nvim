@@ -111,8 +111,7 @@ T["normal"]["list block toggle should promote whole paragraph with each line int
 		"Foo",
 		"Bar",
 		"Baz",
-		"",
-		"Sheesh",
+		"- Sheesh",
 	})
 	child.api.nvim_win_set_cursor(0, { 3, 0 })
 	child.type_keys(" ll")
@@ -125,7 +124,7 @@ T["normal"]["list block toggle should promote whole paragraph with each line int
 		"- Bar",
 		"- Baz",
 		"",
-		"Sheesh",
+		"- Sheesh",
 	}
 
 	eq(result_buffer, expected_buffer)
