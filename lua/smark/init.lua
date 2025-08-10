@@ -50,6 +50,7 @@ function callback.insert_newline()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
+		false,
 		new_line_at_cursor
 	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
@@ -68,7 +69,15 @@ function callback.insert_indent()
 	list_manipulation.apply_indent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
@@ -90,7 +99,15 @@ function callback.insert_unindent()
 	)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
@@ -110,7 +127,15 @@ function callback.normal_indent()
 	list_manipulation.apply_indent(li_block, start_index, end_index)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_unindent()
@@ -129,7 +154,15 @@ function callback.normal_unindent()
 	list_manipulation.apply_unindent(li_block, start_index, end_index)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_indent_op()
@@ -166,7 +199,15 @@ function callback.normal_o()
 	list_manipulation.apply_normal_o(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, true)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		true
+	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 	vim.cmd("startinsert!")
 end
@@ -181,7 +222,15 @@ function callback.normal_format()
 
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_ordered()
@@ -195,7 +244,15 @@ function callback.normal_ordered()
 	list_manipulation.toggle_normal_ordered_type(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_checkbox()
@@ -209,7 +266,15 @@ function callback.normal_checkbox()
 	list_manipulation.toggle_normal_checkbox(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_task()
@@ -223,7 +288,15 @@ function callback.normal_task()
 	list_manipulation.toggle_normal_task(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function callback.normal_list()
@@ -241,12 +314,13 @@ function callback.normal_list()
 			li_block_bounds,
 			cursor_coords,
 			to_put_separator_at_start,
+			false,
 			false
 		)
 		return
 	end
 
-	local bounds, lines, cursor_coords = buffer.get_current_paragraph()
+	local bounds, lines, cursor_coords, to_put_separator_at_end = buffer.get_current_paragraph()
 
 	if bounds == nil then
 		return
@@ -254,33 +328,19 @@ function callback.normal_list()
 
 	li_block = {}
 
-	while #lines > 0 do
-		local head = table.remove(lines, 1)
-		local head_li_template, head_content = buffer.pattern_match_line(head)
-		if head_li_template == nil then
-			table.insert(li_block, {
-				indent_rules = {
-					{ is_ordered = false, num_spaces = 0 },
-				},
-				is_task = false,
-				is_completed = false,
-				position_number = 1,
-				content = { head_content },
-			})
-		else
-			head_li_template.content = { head_content }
-			while #lines > 0 do
-				if buffer.pattern_match_line(lines[1]) ~= nil then
-					break
-				end
-				local continuation = table.remove(lines, 1)
-				table.insert(head_li_template.content, continuation)
-			end
-			table.insert(li_block, head_li_template)
-		end
+	for _, line in ipairs(lines) do
+		table.insert(li_block, {
+			indent_rules = {
+				{ is_ordered = false, num_spaces = 0 },
+			},
+			is_task = false,
+			is_completed = false,
+			position_number = 1,
+			content = { line },
+		})
 	end
 
-	buffer.draw_list_items(li_block, lines, bounds, cursor_coords, false, false)
+	buffer.draw_list_items(li_block, lines, bounds, cursor_coords, false, to_put_separator_at_end, false)
 end
 
 function callback.visual_indent()
