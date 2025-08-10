@@ -223,9 +223,15 @@ function M.pattern_match_task_root(text)
 	return true, is_completed, content_line, string.len(preamble)
 end
 
----@return TextBlockBounds|nil paragraph_bounds
+---Only call this function once you have verified that the current text block
+---is not inside of a list item. Otherwise you get undefined behaviour.
+---
+---@return TextBlockBounds|nil paragraph_bounds Bounds of contiguous lines that
+---are normal paragraphs (not empty lines, and not list items).
 ---@return string[] paragraph_lines
 ---@return CursorCoords cursor_coords
+---@return boolean to_put_separator_at_end Set to true if the line immediately
+---following the paragraph is a list element
 function M.get_current_paragraph()
 	local cursor_row, cursor_col = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row = cursor_row, col = cursor_col }
@@ -242,19 +248,28 @@ function M.get_current_paragraph()
 	end
 
 	if #paragraph_lines == 0 then
-		return nil, {}, cursor_coords
+		return nil, {}, cursor_coords, false
 	end
+
+	local to_put_separator_at_end = false
 
 	for line_num = cursor_coords.row + 1, vim.api.nvim_buf_line_count(0) do
 		local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
 		if line == "" then
 			break
 		end
+
+		local li_template = M.pattern_match_line(line)
+		if li_template ~= nil then
+			to_put_separator_at_end = true
+			break
+		end
+
 		table.insert(paragraph_lines, line)
 		paragraph_bounds.lower = line_num
 	end
 
-	return paragraph_bounds, paragraph_lines, cursor_coords
+	return paragraph_bounds, paragraph_lines, cursor_coords, to_put_separator_at_end
 end
 
 ---Draw out string representations of list items in li_array between the lines
@@ -269,6 +284,7 @@ end
 ---@param to_put_separator_at_start boolean Set to true if an empty line should
 ---be inserted at the beginning to separate the list block from other contents
 ---above.
+---@param to_put_separator_at_end boolean Similar to above, but for the end
 ---@param new_line_at_cursor boolean Set to true if new line has explicitly
 ---been generated at the cursor
 function M.draw_list_items(
@@ -277,6 +293,7 @@ function M.draw_list_items(
 	li_block_bounds,
 	cursor_coords,
 	to_put_separator_at_start,
+	to_put_separator_at_end,
 	new_line_at_cursor
 )
 	local relative_cursor_line_num = cursor_coords.row - li_block_bounds.upper + 1
@@ -315,6 +332,11 @@ function M.draw_list_items(
 		end
 
 		preceding_item_type = current_item_type
+	end
+
+	if to_put_separator_at_end then
+		table.insert(write_time_lines, "")
+		table.insert(new_line_numbers, current_line_index)
 	end
 
 	if new_line_at_cursor then
