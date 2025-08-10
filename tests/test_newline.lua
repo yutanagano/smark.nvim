@@ -69,12 +69,24 @@ T["insert_CR"]["auto-numbers ordered list elements"] = function()
 end
 
 T["insert_CR"]["auto-unindents if current list item empty"] = function()
-	child.api.nvim_buf_set_lines(0, 0, -2, true, { "Foobar", "", "- Test:", "  - " })
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
+		"Foobar",
+		"",
+		"- Test:",
+		"  - ",
+		"- Foo",
+	})
 	child.api.nvim_win_set_cursor(0, { 4, 0 })
 	child.type_keys("A<CR>")
 
 	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
-	local expected_buffer = { "Foobar", "", "- Test:", "- " }
+	local expected_buffer = {
+		"Foobar",
+		"",
+		"- Test:",
+		"- ",
+		"- Foo",
+	}
 
 	eq(result_buffer, expected_buffer)
 end
