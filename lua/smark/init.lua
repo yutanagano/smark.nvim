@@ -256,7 +256,7 @@ function callback.normal_list()
 
 	while #lines > 0 do
 		local head = table.remove(lines, 1)
-		local head_li_template = buffer.pattern_match_line(head)
+		local head_li_template, head_content = buffer.pattern_match_line(head)
 		if head_li_template == nil then
 			table.insert(li_block, {
 				indent_rules = {
@@ -265,9 +265,10 @@ function callback.normal_list()
 				is_task = false,
 				is_completed = false,
 				position_number = 1,
-				content = { head },
+				content = { head_content },
 			})
 		else
+			head_li_template.content = { head_content }
 			while #lines > 0 do
 				if buffer.pattern_match_line(lines[1]) ~= nil then
 					break
