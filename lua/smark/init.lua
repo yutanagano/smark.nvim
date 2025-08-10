@@ -21,7 +21,6 @@ function M.setup(_)
 			vim.keymap.set("n", "<leader>lo", callback.normal_ordered, { buffer = true })
 			vim.keymap.set("n", "<leader>lx", callback.normal_checkbox, { buffer = true })
 			vim.keymap.set("n", "<leader>lt", callback.normal_task, { buffer = true })
-			vim.keymap.set("n", "<leader>ll", callback.normal_list, { buffer = true })
 			vim.keymap.set("x", ">", callback.visual_indent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<", callback.visual_unindent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<leader>lo", callback.visual_ordered, { expr = true, buffer = true })
@@ -297,50 +296,6 @@ function callback.normal_task()
 		false,
 		false
 	)
-end
-
-function callback.normal_list()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
-		buffer.get_list_block_around_cursor()
-
-	if li_block_bounds ~= nil then
-		for _, li in ipairs(li_block) do
-			li.indent_rules = {}
-		end
-		local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
-		buffer.draw_list_items(
-			li_block,
-			read_time_lines,
-			li_block_bounds,
-			cursor_coords,
-			to_put_separator_at_start,
-			false,
-			false
-		)
-		return
-	end
-
-	local bounds, lines, cursor_coords, to_put_separator_at_end = buffer.get_current_paragraph()
-
-	if bounds == nil then
-		return
-	end
-
-	li_block = {}
-
-	for _, line in ipairs(lines) do
-		table.insert(li_block, {
-			indent_rules = {
-				{ is_ordered = false, num_spaces = 0 },
-			},
-			is_task = false,
-			is_completed = false,
-			position_number = 1,
-			content = { line },
-		})
-	end
-
-	buffer.draw_list_items(li_block, lines, bounds, cursor_coords, false, to_put_separator_at_end, false)
 end
 
 function callback.visual_indent()
