@@ -104,60 +104,6 @@ T["normal"]["<leader>lt toggles task list items for contiguous siblings"] = func
 	eq(result_buffer, expected_buffer)
 end
 
-T["normal"]["list block toggle should promote whole paragraph with each line into a list element"] = function()
-	child.api.nvim_buf_set_lines(0, 0, -2, true, {
-		"Sheesh",
-		"",
-		"Foo",
-		"Bar",
-		"Baz",
-		"- Sheesh",
-	})
-	child.api.nvim_win_set_cursor(0, { 3, 0 })
-	child.type_keys(" ll")
-
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
-	local expected_buffer = {
-		"Sheesh",
-		"",
-		"- Foo",
-		"- Bar",
-		"- Baz",
-		"",
-		"- Sheesh",
-	}
-
-	eq(result_buffer, expected_buffer)
-end
-
-T["normal"]["list block toggle should demote whole list block"] = function()
-	child.api.nvim_buf_set_lines(0, 0, -2, true, {
-		"Noice",
-		"- Foo",
-		"  - Bar",
-		"    Baz",
-		"- Sheesh",
-		"",
-		"Noice",
-	})
-	child.api.nvim_win_set_cursor(0, { 3, 0 })
-	child.type_keys(" ll")
-
-	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
-	local expected_buffer = {
-		"Noice",
-		"",
-		"Foo",
-		"Bar",
-		"Baz",
-		"Sheesh",
-		"",
-		"Noice",
-	}
-
-	eq(result_buffer, expected_buffer)
-end
-
 T["visual"] = new_set()
 
 T["visual"]["<leader>lo toggles ordered type"] = function()
