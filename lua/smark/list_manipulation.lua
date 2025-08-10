@@ -14,7 +14,7 @@ local M = {}
 function M.apply_insert_newline(li_block, li_cursor_coords)
 	local current_li = li_block[li_cursor_coords.list_index]
 
-	if li_cursor_coords.list_index == #li_block and list_item.content_is_empty(current_li) then
+	if list_item.content_is_empty(current_li) then
 		M.apply_unindent(li_block, li_cursor_coords.list_index, li_cursor_coords.list_index, li_cursor_coords)
 		return false
 	end
