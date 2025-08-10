@@ -17,7 +17,15 @@ function M.normal_indent()
 	list_manipulation.apply_indent(li_block, start_index, end_index)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.normal_unindent()
@@ -33,7 +41,15 @@ function M.normal_unindent()
 	list_manipulation.apply_unindent(li_block, start_index, end_index)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.visual_indent()
@@ -51,7 +67,15 @@ function M.visual_indent()
 	end
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.visual_unindent()
@@ -69,7 +93,15 @@ function M.visual_unindent()
 	end
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.visual_toggle_ordered()
@@ -85,7 +117,15 @@ function M.visual_toggle_ordered()
 	list_manipulation.toggle_visual_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.visual_toggle_checkbox()
@@ -101,7 +141,15 @@ function M.visual_toggle_checkbox()
 	list_manipulation.toggle_visual_checkbox(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 function M.visual_toggle_task()
@@ -117,7 +165,15 @@ function M.visual_toggle_task()
 	list_manipulation.toggle_visual_task(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
-	buffer.draw_list_items(li_block, read_time_lines, li_block_bounds, cursor_coords, to_put_separator_at_start, false)
+	buffer.draw_list_items(
+		li_block,
+		read_time_lines,
+		li_block_bounds,
+		cursor_coords,
+		to_put_separator_at_start,
+		false,
+		false
+	)
 end
 
 return M
