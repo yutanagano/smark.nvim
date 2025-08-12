@@ -195,7 +195,7 @@ end
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_normal_ordered_type(li_block, li_cursor_coords)
+function M.normal_toggle_ordered_type(li_block, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local cursor_ilevel = #cursor_li.indent_rules
 	local cursor_ordered = cursor_li.indent_rules[cursor_ilevel].is_ordered
@@ -248,7 +248,7 @@ end
 ---@param start_index integer 1-indexed number of first line of selection
 ---@param end_index integer 1-indexed number of last line of selection
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_visual_ordered_type(li_block, start_index, end_index, li_cursor_coords)
+function M.visual_toggle_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local target_ordered_status = not cursor_li.indent_rules[#cursor_li.indent_rules].is_ordered
 
@@ -283,7 +283,7 @@ end
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_normal_checkbox(li_block, li_cursor_coords)
+function M.normal_toggle_completion(li_block, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local cursor_ilevel = #cursor_li.indent_rules
 	local target_completion_status = not cursor_li.is_completed
@@ -317,16 +317,16 @@ end
 ---whether they are marked as completed. This edits li_block in place to
 ---reflect the changes. The completion status is toggled for the list elements
 ---between start_index and end_index. For any list elements in the range that
----are not of a checkbox type, this results in a no-op. The completion status
----is toggled to the opposite type from that of the list element that is under
----the cursor. Only call this function after first fixing format. Ensure that
+---are not of a task type, this results in a no-op. The completion status is
+---toggled to the opposite type from that of the list element that is under the
+---cursor. Only call this function after first fixing format. Ensure that
 ---start_index and end_index are within bounds.
 ---
 ---@param li_block ListItem[]
 ---@param start_row integer 1-indexed number of first line of selection
 ---@param end_row integer 1-indexed number of last line of selection
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_visual_checkbox(li_block, start_row, end_row, li_cursor_coords)
+function M.visual_toggle_completion(li_block, start_row, end_row, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local target_completion_status = not cursor_li.is_completed
 	local current_parent_task_li = nil
@@ -367,7 +367,7 @@ end
 ---
 ---@param li_block ListItem[]
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_normal_task(li_block, li_cursor_coords)
+function M.normal_toggle_task(li_block, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local cursor_ilevel = #cursor_li.indent_rules
 	local target_is_task_status = not cursor_li.is_task
@@ -407,7 +407,7 @@ end
 ---@param start_row integer 1-indexed number of first line of selection
 ---@param end_row integer 1-indexed number of last line of selection
 ---@param li_cursor_coords LiCursorCoords
-function M.toggle_visual_task(li_block, start_row, end_row, li_cursor_coords)
+function M.visual_toggle_task(li_block, start_row, end_row, li_cursor_coords)
 	local cursor_li = li_block[li_cursor_coords.list_index]
 	local target_is_task_status = not cursor_li.is_task
 
