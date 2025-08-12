@@ -62,15 +62,31 @@ return {
   {
     "yutanagano/smark.nvim",
     ft = { "markdown", "text" },
-    config = true
+    -- You can omit the opts table below and simply set config = true if you
+    -- are happy with the default settings
+    opts = {
+      --Default keymapping settings for list action commands.
+      --Set to false or nil to disable.
+      mappings = {
+        --Format the current list block to be clean / correct
+        format_list = "<leader>lf",
+        --Switch between ordered / unordered list types
+        toggle_ordered = "<leader>lo",
+        --Toggle the completion status of a task list item
+        toggle_completion = "<leader>lx",
+        --Toggle between plain and task list items
+        toggle_task = "<leader>lt",
+      },
+    },
   }
 }
 ```
 
 > [!IMPORTANT]
-> The plugin is active only when editing markdown or plain text documents.
-> The `ft = {"markdown", "text"}` setting ensures the plugin is lazily loaded
-> only after NeoVim opens a markdown or plain text buffer.
+> The `ft = { "markdown", "text" }` setting ensures the plugin is lazily loaded
+> only after NeoVim opens a markdown or plain text buffer. However, regardless
+> of lazy loading, the plugin is only active when editing markdown or plain
+> text documents.
 
 ## 💭 Why smark?
 
