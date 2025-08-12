@@ -23,6 +23,7 @@
 - [x] Change behaviour of \<CR\> to demote empty bullets even if there are more
       bullets in front of it
 - [ ] Implement configuration options:
+  - [ ] Keybinds
   - [ ] Auto-numbering
   - [ ] List type on indenting
 
