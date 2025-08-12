@@ -5,7 +5,24 @@ local list_manipulation = require("smark.list_manipulation")
 local M = {}
 local callback = {}
 
-function M.setup(_)
+function M.setup(opts)
+	local default_opts = {
+		--Keymapping settings for list action commands.
+		--Set to false or nil to disable.
+		mappings = {
+			--Format the current list block to be clean / correct
+			format_list = "<leader>lf",
+			--Switch between ordered / unordered list types
+			toggle_ordered = "<leader>lo",
+			--Toggle the completion status of a task list item
+			toggle_completion = "<leader>lx",
+			--Toggle between plain and task list items
+			toggle_task = "<leader>lt",
+		},
+	}
+
+	opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+
 	vim.api.nvim_create_autocmd("FileType", {
 		pattern = { "markdown", "text" },
 		callback = function()
@@ -17,15 +34,37 @@ function M.setup(_)
 			vim.keymap.set("n", ">", callback.normal_indent_op, { expr = true, buffer = true })
 			vim.keymap.set("n", "<", callback.normal_unindent_op, { expr = true, buffer = true })
 			vim.keymap.set("n", "o", callback.normal_o, { buffer = true })
-			vim.keymap.set("n", "<leader>lf", callback.normal_format, { buffer = true })
-			vim.keymap.set("n", "<leader>lo", callback.normal_ordered, { buffer = true })
-			vim.keymap.set("n", "<leader>lx", callback.normal_checkbox, { buffer = true })
-			vim.keymap.set("n", "<leader>lt", callback.normal_task, { buffer = true })
 			vim.keymap.set("x", ">", callback.visual_indent, { expr = true, buffer = true })
 			vim.keymap.set("x", "<", callback.visual_unindent, { expr = true, buffer = true })
-			vim.keymap.set("x", "<leader>lo", callback.visual_ordered, { expr = true, buffer = true })
-			vim.keymap.set("x", "<leader>lx", callback.visual_checkbox, { expr = true, buffer = true })
-			vim.keymap.set("x", "<leader>lt", callback.visual_task, { expr = true, buffer = true })
+
+			if opts.mappings.format_list then
+				vim.keymap.set("n", opts.mappings.format_list, callback.normal_format, { buffer = true })
+			end
+
+			if opts.mappings.toggle_ordered then
+				vim.keymap.set("n", opts.mappings.toggle_ordered, callback.normal_ordered, { buffer = true })
+				vim.keymap.set(
+					"x",
+					opts.mappings.toggle_ordered,
+					callback.visual_ordered,
+					{ expr = true, buffer = true }
+				)
+			end
+
+			if opts.mappings.toggle_completion then
+				vim.keymap.set("n", opts.mappings.toggle_completion, callback.normal_completion, { buffer = true })
+				vim.keymap.set(
+					"x",
+					opts.mappings.toggle_completion,
+					callback.visual_completion,
+					{ expr = true, buffer = true }
+				)
+			end
+
+			if opts.mappings.toggle_task then
+				vim.keymap.set("n", opts.mappings.toggle_task, callback.normal_task, { buffer = true })
+				vim.keymap.set("x", opts.mappings.toggle_task, callback.visual_task, { expr = true, buffer = true })
+			end
 		end,
 	})
 end
@@ -240,7 +279,7 @@ function callback.normal_ordered()
 		return
 	end
 
-	list_manipulation.toggle_normal_ordered_type(li_block, li_cursor_coords)
+	list_manipulation.normal_toggle_ordered_type(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
@@ -254,7 +293,7 @@ function callback.normal_ordered()
 	)
 end
 
-function callback.normal_checkbox()
+function callback.normal_completion()
 	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
 		buffer.get_list_block_around_cursor()
 
@@ -262,7 +301,7 @@ function callback.normal_checkbox()
 		return
 	end
 
-	list_manipulation.toggle_normal_checkbox(li_block, li_cursor_coords)
+	list_manipulation.normal_toggle_completion(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
@@ -284,7 +323,7 @@ function callback.normal_task()
 		return
 	end
 
-	list_manipulation.toggle_normal_task(li_block, li_cursor_coords)
+	list_manipulation.normal_toggle_task(li_block, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
@@ -346,7 +385,7 @@ function callback.visual_ordered()
 	return "g@"
 end
 
-function callback.visual_checkbox()
+function callback.visual_completion()
 	local li_block_bounds = buffer.get_list_block_around_cursor()
 	local highlight_bound_row = vim.fn.getpos("v")[2]
 
@@ -358,7 +397,7 @@ function callback.visual_checkbox()
 		return
 	end
 
-	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_checkbox"
+	vim.opt.operatorfunc = "v:lua.require'smark.operator'.visual_toggle_completion"
 	return "g@"
 end
 

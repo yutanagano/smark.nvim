@@ -114,7 +114,7 @@ function M.visual_toggle_ordered()
 	local start_index = cursor.make_relative_to_containing_li(start_row, li_block, li_block_bounds)
 	local end_index = cursor.make_relative_to_containing_li(end_row, li_block, li_block_bounds)
 
-	list_manipulation.toggle_visual_ordered_type(li_block, start_index, end_index, li_cursor_coords)
+	list_manipulation.visual_toggle_ordered_type(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
@@ -128,7 +128,7 @@ function M.visual_toggle_ordered()
 	)
 end
 
-function M.visual_toggle_checkbox()
+function M.visual_toggle_completion()
 	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
@@ -138,7 +138,7 @@ function M.visual_toggle_checkbox()
 	local start_index = cursor.make_relative_to_containing_li(start_row, li_block, li_block_bounds)
 	local end_index = cursor.make_relative_to_containing_li(end_row, li_block, li_block_bounds)
 
-	list_manipulation.toggle_visual_checkbox(li_block, start_index, end_index, li_cursor_coords)
+	list_manipulation.visual_toggle_completion(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
@@ -162,7 +162,7 @@ function M.visual_toggle_task()
 	local start_index = cursor.make_relative_to_containing_li(start_row, li_block, li_block_bounds)
 	local end_index = cursor.make_relative_to_containing_li(end_row, li_block, li_block_bounds)
 
-	list_manipulation.toggle_visual_task(li_block, start_index, end_index, li_cursor_coords)
+	list_manipulation.visual_toggle_task(li_block, start_index, end_index, li_cursor_coords)
 	local cursor_coords = cursor.to_absolute_cursor_coords(li_cursor_coords, li_block, li_block_bounds)
 
 	buffer.draw_list_items(
