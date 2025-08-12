@@ -22,10 +22,8 @@
       adjacent list elements and normal paragraph lines
 - [x] Change behaviour of \<CR\> to demote empty bullets even if there are more
       bullets in front of it
-- [ ] Implement configuration options:
+- [x] Implement configuration options:
   - [x] Keymaps
-  - [ ] Auto-numbering
-  - [ ] List type on indenting
 
 ## Version 0.1
 
