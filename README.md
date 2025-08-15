@@ -13,8 +13,6 @@ lists. It has an opinionated design with the following principles:
 2. **Clean**: follow [Prettier's][prettier] style convention
 3. **Smart**: Automatically infer as much as possible
 
-![demo](./demo.gif)
-
 ## 📋 Features
 
 - Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal
