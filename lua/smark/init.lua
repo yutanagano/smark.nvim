@@ -8,7 +8,7 @@ local callback = {}
 function M.setup(opts)
 	local default_opts = {
 		--Keymapping settings for list action commands.
-		--Set to false or nil to disable.
+		--Set to false to disable.
 		mappings = {
 			--Format the current list block to be clean / correct
 			format_list = "<leader>lf",
