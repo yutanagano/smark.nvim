@@ -15,19 +15,19 @@ lists. It has an opinionated design with the following principles:
 
 ## 📋 Features
 
-| Feature | Demo |
-|-|-|
-| Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal mode) | ![autobullet](https://github.com/user-attachments/assets/56ccf9d8-42c5-4fee-a7bf-f2873f24f11e) |
-| Supports list indentation / nested lists | ![indentation](https://github.com/user-attachments/assets/96f70a39-d930-4c91-8080-9d55a656cc0a) |
-| Indenting multiple items at once | ![multiline_indentation](https://github.com/user-attachments/assets/d424c6e8-dbc1-4621-8816-324d45a5a65d) |
-| Toggle between ordered and unordered list types | ![ordered](https://github.com/user-attachments/assets/d2d91ccc-3ba0-44f7-8668-a3cab6d4c298) |
-| Support for task list items | ![completion](https://github.com/user-attachments/assets/8811cc28-e222-4915-a6ff-1c519c7cf807) |
-| Toggle between plain and task list items | ![task](https://github.com/user-attachments/assets/f695f1dd-79a4-4f41-906b-b706cf02dd88) |
-| Support for multi-line list items | ![multiline](https://github.com/user-attachments/assets/e95443cd-0c83-4d0d-9a59-faa4b98927d0) |
-| Inference of indent level list type from context | ![type_inference](https://github.com/user-attachments/assets/a777aef9-9c9e-4ba4-a87b-55b949c709fa) |
-| Automatic updates to indentation rules as necessary | ![indent_spacing](https://github.com/user-attachments/assets/3a5cd857-1b4c-46e7-8fff-f7574e7ce948) |
-| Clearnly turning list items into paragraphs | ![paragraph](https://github.com/user-attachments/assets/9a626a66-a931-4ca7-b809-ac3a6f33629f) |
-| Manual triggering of list block formatting | ![format](https://github.com/user-attachments/assets/b3107378-3822-4f62-bb98-6f5655b3b307) |
+| Feature                                                                             | Demo                                                                                                      |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Automatic generation of list markers with `<CR>` (insert mode) or `o` (normal mode) | ![autobullet](https://github.com/user-attachments/assets/56ccf9d8-42c5-4fee-a7bf-f2873f24f11e)            |
+| Supports list indentation / nested lists                                            | ![indentation](https://github.com/user-attachments/assets/96f70a39-d930-4c91-8080-9d55a656cc0a)           |
+| Indenting multiple items at once                                                    | ![multiline_indentation](https://github.com/user-attachments/assets/d424c6e8-dbc1-4621-8816-324d45a5a65d) |
+| Toggle between ordered and unordered list types                                     | ![ordered](https://github.com/user-attachments/assets/d2d91ccc-3ba0-44f7-8668-a3cab6d4c298)               |
+| Support for task list items                                                         | ![completion](https://github.com/user-attachments/assets/8811cc28-e222-4915-a6ff-1c519c7cf807)            |
+| Toggle between plain and task list items                                            | ![task](https://github.com/user-attachments/assets/f695f1dd-79a4-4f41-906b-b706cf02dd88)                  |
+| Support for multi-line list items                                                   | ![multiline](https://github.com/user-attachments/assets/e95443cd-0c83-4d0d-9a59-faa4b98927d0)             |
+| Inference of indent level list type from context                                    | ![type_inference](https://github.com/user-attachments/assets/a777aef9-9c9e-4ba4-a87b-55b949c709fa)        |
+| Automatic updates to indentation rules as necessary                                 | ![indent_spacing](https://github.com/user-attachments/assets/3a5cd857-1b4c-46e7-8fff-f7574e7ce948)        |
+| Clearnly turning list items into paragraphs                                         | ![paragraph](https://github.com/user-attachments/assets/9a626a66-a931-4ca7-b809-ac3a6f33629f)             |
+| Manual triggering of list block formatting                                          | ![format](https://github.com/user-attachments/assets/b3107378-3822-4f62-bb98-6f5655b3b307)                |
 
 ## ⚙️ Installation
 
@@ -42,7 +42,7 @@ return {
     -- are happy with the default settings
     opts = {
       --Default keymapping settings for list action commands.
-      --Set to false or nil to disable.
+      --Set to false to disable.
       mappings = {
         --Format the current list block to be clean / correct
         format_list = "<leader>lf",
