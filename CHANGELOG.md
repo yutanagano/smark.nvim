@@ -1,3 +1,11 @@
+## Version 0.3
+
+- [ ] Smark should intelligently infer whether a new list item should be a task
+      list item or not
+- [ ] Prose text directly below a list item should only be considered part of
+      the list item contents if the prose text is indented at least with one
+      space
+
 ## Version 0.2
 
 - [x] Fix buffer write bug that caused more line writes than was necessary
