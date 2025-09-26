@@ -2,7 +2,7 @@
 
 - [ ] Smark should intelligently infer whether a new list item should be a task
       list item or not
-- [ ] Prose text directly below a list item should only be considered part of
+- [x] Prose text directly below a list item should only be considered part of
       the list item contents if the prose text is indented at least with one
       space
 

@@ -6,7 +6,11 @@ if table.unpack == nil then -- compatibility with older Lua
 	table.unpack = unpack
 end
 
-local M = {}
+local M = {
+	--Setting controlling multi-line list element detection behaviour, see
+	--init.lua.
+	multiline_requires_whitespace = false,
+}
 
 ---Check if the cursor is currently inside of a list block. If it is, then
 ---return the items below concerning the current list block.
@@ -22,28 +26,31 @@ local M = {}
 ---@return LiCursorCoords li_cursor_coords The current cursor coordinates,
 ---specified semantically relative to the list items. An empty table if cursor
 ---is not inside a list block.
----@return boolean to_put_separator_at_start A flat that will be set to true if
+---@return boolean to_put_separator_at_start A flag that will be set to true if
 ---the line preceding the list block is a normal paragraph and an empty
 ---separator line should be added above the list block to separate the two.
+---@return boolean to_put_separator_at_end A similar flag to above, but for the
+---line immediately following the list block.
 function M.get_list_block_around_cursor()
 	local cursor_row, cursor_col = table.unpack(vim.api.nvim_win_get_cursor(0))
 	local cursor_coords = { row = cursor_row, col = cursor_col }
 	local li, li_bounds, li_read_time_lines, read_time_preamble_len = M.scan_text_around_line(cursor_coords.row)
 
 	if li == nil then
-		return nil, {}, {}, {}, false
+		return nil, {}, {}, {}, false, false
 	end
 
 	local li_block_bounds = { upper = li_bounds.upper, lower = li_bounds.lower }
 	local li_block = { li }
 	local read_time_lines = li_read_time_lines
 	local to_put_separator_at_start = false
+	local to_put_separator_at_end = false
 
 	while li_block_bounds.upper > 1 do
 		li, li_bounds, li_read_time_lines = M.scan_text_around_line(li_block_bounds.upper - 1)
 
 		if li == nil then
-			if string.match(li_read_time_lines[#li_read_time_lines], "^%s*$") == nil then
+			if li_read_time_lines[#li_read_time_lines] ~= "" then
 				to_put_separator_at_start = true
 			end
 			break
@@ -61,6 +68,9 @@ function M.get_list_block_around_cursor()
 		li, li_bounds, li_read_time_lines = M.scan_text_around_line(li_block_bounds.lower + 1)
 
 		if li == nil then
+			if li_read_time_lines[1] ~= "" then
+				to_put_separator_at_end = true
+			end
 			break
 		end
 
@@ -75,7 +85,12 @@ function M.get_list_block_around_cursor()
 
 	format.fix(li_block, li_cursor_coords, read_time_preamble_len)
 
-	return li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start
+	return li_block_bounds,
+		li_block,
+		read_time_lines,
+		li_cursor_coords,
+		to_put_separator_at_start,
+		to_put_separator_at_end
 end
 
 ---Scan current buffer (0) text around the given line number, and if this text
@@ -100,24 +115,25 @@ end
 function M.scan_text_around_line(line_num)
 	local buf_line_count = vim.api.nvim_buf_line_count(0)
 	local raw_line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, true)[1]
-	local li_shell, content_line, preamble_len = M.pattern_match_line(raw_line)
+	local li_shell, content_line, cursor_line_preamble_len = M.pattern_match_line(raw_line)
 
 	local bounds = { upper = line_num, lower = line_num }
 
-	if li_shell == nil and content_line == "" then
-		return nil, bounds, { raw_line }, preamble_len
+	if li_shell == nil and M.line_confirmed_not_in_li(content_line, cursor_line_preamble_len) then
+		return nil, bounds, { raw_line }, cursor_line_preamble_len
 	end
 
 	local li = li_shell
 	local content = { content_line }
 	local read_time_lines = { raw_line }
+	local current_line_preamble_len = 0
 
 	if li == nil then
 		for current_lnum = line_num - 1, 1, -1 do
 			raw_line = vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1]
-			li_shell, content_line = M.pattern_match_line(raw_line)
+			li_shell, content_line, current_line_preamble_len = M.pattern_match_line(raw_line)
 
-			if content_line == "" then
+			if M.line_confirmed_not_in_li(content_line, current_line_preamble_len) then
 				bounds.upper = current_lnum + 1
 				break
 			end
@@ -135,9 +151,9 @@ function M.scan_text_around_line(line_num)
 
 	for current_lnum = line_num + 1, buf_line_count do
 		raw_line = vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1]
-		li_shell, content_line = M.pattern_match_line(raw_line)
+		li_shell, content_line, current_line_preamble_len = M.pattern_match_line(raw_line)
 
-		if content_line == "" or li_shell ~= nil then
+		if M.line_confirmed_not_in_li(content_line, current_line_preamble_len) or li_shell ~= nil then
 			bounds.lower = current_lnum - 1
 			break
 		end
@@ -151,12 +167,12 @@ function M.scan_text_around_line(line_num)
 	end
 
 	if li == nil then
-		return nil, bounds, read_time_lines, preamble_len
+		return nil, bounds, read_time_lines, cursor_line_preamble_len
 	end
 
 	li.content = content
 
-	return li, bounds, read_time_lines, preamble_len
+	return li, bounds, read_time_lines, cursor_line_preamble_len
 end
 
 ---@param text string Text of line to pattern match
@@ -223,19 +239,33 @@ function M.pattern_match_task_root(text)
 	return true, is_completed, content_line, string.len(preamble)
 end
 
+---Note that the behaviour of this function depends on the module setting
+---multiline_requires_whitespace.
+---
+---@param content_line string
+---@param preamble_len integer
+---@return boolean in_li True if line is definitely not part of list item.
+function M.line_confirmed_not_in_li(content_line, preamble_len)
+	if M.multiline_requires_whitespace then
+		return preamble_len == 0
+	end
+
+	return content_line == ""
+end
+
 ---Draw out string representations of list items in li_array between the lines
 ---specified by bounds. Also may modify cursor_coords in place (move it down
 ---some rows) if new seaparator lines are written above it.
 ---
----@param li_block ListItem[]
+---@param li_block ListItem[] List block to draw to buffer
 ---@param read_time_lines string[] Array containing original text contents of
 ---list block
----@param li_block_bounds TextBlockBounds
----@param cursor_coords CursorCoords
+---@param li_block_bounds TextBlockBounds Bounds on list block
+---@param cursor_coords CursorCoords Absolute coordinates of cursor
 ---@param to_put_separator_at_start boolean Set to true if an empty line should
 ---be inserted at the beginning to separate the list block from other contents
 ---above.
----@param to_put_separator_at_end boolean Similar to above, but for the end
+---@param to_put_separator_at_end boolean Similar to above, but for the end.
 ---@param new_line_at_cursor boolean Set to true if new line has explicitly
 ---been generated at the cursor
 function M.draw_list_items(

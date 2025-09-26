@@ -5,7 +5,7 @@ local cursor = require("smark.cursor")
 local M = {}
 
 function M.normal_indent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -23,13 +23,13 @@ function M.normal_indent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_start,
 		false
 	)
 end
 
 function M.normal_unindent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -47,13 +47,13 @@ function M.normal_unindent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function M.visual_indent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -73,13 +73,13 @@ function M.visual_indent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function M.visual_unindent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -99,13 +99,13 @@ function M.visual_unindent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function M.visual_toggle_ordered()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -123,13 +123,13 @@ function M.visual_toggle_ordered()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function M.visual_toggle_completion()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -147,13 +147,13 @@ function M.visual_toggle_completion()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function M.visual_toggle_task()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 	assert(li_block_bounds ~= nil, "op called outside of list block")
 
@@ -171,7 +171,7 @@ function M.visual_toggle_task()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end

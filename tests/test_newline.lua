@@ -324,7 +324,7 @@ T["insert_CR"]["can automatically insert separating lines and new list item simu
 	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"This should be a normal paragraph here.",
 		"- There should be a separating line above",
-		"This should become part of the list content",
+		" This should become part of the list content",
 		"- A new list item should be made below",
 	})
 	child.api.nvim_win_set_cursor(0, { 4, 0 })
@@ -338,6 +338,28 @@ T["insert_CR"]["can automatically insert separating lines and new list item simu
 		"  This should become part of the list content",
 		"- A new list item should be made below",
 		"- Foobar",
+	}
+
+	eq(result_buffer, expected_buffer)
+end
+
+T["insert_CR"]["inserts new separating line between prose line directly below"] = function()
+	--Set multiline_requires_whitespace option
+	child.lua([[require('smark').setup({multiline_requires_whitespace = true})]])
+
+	child.api.nvim_buf_set_lines(0, 0, -2, true, {
+		"- There should be a separating line below",
+		"This should be considered a prose line.",
+	})
+	child.api.nvim_win_set_cursor(0, { 1, 0 })
+	child.type_keys("A<CR>Foobar")
+
+	local result_buffer = child.api.nvim_buf_get_lines(0, 0, -2, true)
+	local expected_buffer = {
+		"- There should be a separating line below",
+		"- Foobar",
+		"",
+		"This should be considered a prose line.",
 	}
 
 	eq(result_buffer, expected_buffer)
