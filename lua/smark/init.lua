@@ -70,7 +70,7 @@ function M.setup(opts)
 end
 
 function callback.insert_newline()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -88,14 +88,14 @@ function callback.insert_newline()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		new_line_at_cursor
 	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function callback.insert_indent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -113,14 +113,14 @@ function callback.insert_indent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function callback.insert_unindent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -143,14 +143,14 @@ function callback.insert_unindent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
 end
 
 function callback.normal_indent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -171,13 +171,13 @@ function callback.normal_indent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function callback.normal_unindent()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -198,7 +198,7 @@ function callback.normal_unindent()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
@@ -226,7 +226,7 @@ function callback.normal_unindent_op()
 end
 
 function callback.normal_o()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -243,7 +243,7 @@ function callback.normal_o()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		true
 	)
 	vim.api.nvim_win_set_cursor(0, { cursor_coords.row, cursor_coords.col })
@@ -251,7 +251,7 @@ function callback.normal_o()
 end
 
 function callback.normal_format()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -266,13 +266,13 @@ function callback.normal_format()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function callback.normal_ordered()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -288,13 +288,13 @@ function callback.normal_ordered()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function callback.normal_completion()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -310,13 +310,13 @@ function callback.normal_completion()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
 
 function callback.normal_task()
-	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start =
+	local li_block_bounds, li_block, read_time_lines, li_cursor_coords, to_put_separator_at_start, to_put_separator_at_end =
 		buffer.get_list_block_around_cursor()
 
 	if li_block_bounds == nil then
@@ -332,7 +332,7 @@ function callback.normal_task()
 		li_block_bounds,
 		cursor_coords,
 		to_put_separator_at_start,
-		false,
+		to_put_separator_at_end,
 		false
 	)
 end
