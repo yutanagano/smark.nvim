@@ -10,18 +10,25 @@ function M.setup(opts)
 		--Keymapping settings for list action commands.
 		--Set to false to disable.
 		mappings = {
-			--Format the current list block to be clean / correct
+			--Format the current list block to be clean / correct.
 			format_list = "<leader>lf",
-			--Switch between ordered / unordered list types
+			--Switch between ordered / unordered list types.
 			toggle_ordered = "<leader>lo",
-			--Toggle the completion status of a task list item
+			--Toggle the completion status of a task list item.
 			toggle_completion = "<leader>lx",
-			--Toggle between plain and task list items
+			--Toggle between plain and task list items.
 			toggle_task = "<leader>lt",
 		},
+
+		--Following the starting line of a list item, only contiguous lines that
+		--start with at least one whitespace character can be considered as part of
+		--a multi-line list item.
+		multiline_requires_whitespace = false,
 	}
 
 	opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+
+	buffer.multiline_requires_whitespace = opts.multiline_requires_whitespace
 
 	vim.api.nvim_create_autocmd("FileType", {
 		pattern = { "markdown", "text" },

@@ -344,6 +344,9 @@ T["insert_CR"]["can automatically insert separating lines and new list item simu
 end
 
 T["insert_CR"]["inserts new separating line between prose line directly below"] = function()
+	--Set multiline_requires_whitespace option
+	child.lua([[require('smark').setup({multiline_requires_whitespace = true})]])
+
 	child.api.nvim_buf_set_lines(0, 0, -2, true, {
 		"- There should be a separating line below",
 		"This should be considered a prose line.",

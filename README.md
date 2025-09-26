@@ -38,21 +38,27 @@ return {
   {
     "yutanagano/smark.nvim",
     ft = { "markdown", "text" },
-    -- You can omit the opts table below and simply set config = true if you
-    -- are happy with the default settings
+    --Below are the default settings for the available options. You can omit
+    --the opts table below and simply set config = true if you are happy with
+    --the default settings.
     opts = {
-      --Default keymapping settings for list action commands.
+      --Keymapping settings for list action commands.
       --Set to false to disable.
       mappings = {
-        --Format the current list block to be clean / correct
+        --Format the current list block to be clean / correct.
         format_list = "<leader>lf",
-        --Switch between ordered / unordered list types
+        --Switch between ordered / unordered list types.
         toggle_ordered = "<leader>lo",
-        --Toggle the completion status of a task list item
+        --Toggle the completion status of a task list item.
         toggle_completion = "<leader>lx",
-        --Toggle between plain and task list items
+        --Toggle between plain and task list items.
         toggle_task = "<leader>lt",
       },
+
+      --Following the starting line of a list item, only contiguous lines that
+      --start with at least one whitespace character can be considered as part of
+      --a multi-line list item.
+      multiline_requires_whitespace = false,
     },
   }
 }

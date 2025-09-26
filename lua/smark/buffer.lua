@@ -6,7 +6,11 @@ if table.unpack == nil then -- compatibility with older Lua
 	table.unpack = unpack
 end
 
-local M = {}
+local M = {
+	--Setting controlling multi-line list element detection behaviour, see
+	--init.lua.
+	multiline_requires_whitespace = false,
+}
 
 ---Check if the cursor is currently inside of a list block. If it is, then
 ---return the items below concerning the current list block.
@@ -46,7 +50,7 @@ function M.get_list_block_around_cursor()
 		li, li_bounds, li_read_time_lines = M.scan_text_around_line(li_block_bounds.upper - 1)
 
 		if li == nil then
-			if string.len(li_read_time_lines[#li_read_time_lines]) > 0 then
+			if li_read_time_lines[#li_read_time_lines] ~= "" then
 				to_put_separator_at_start = true
 			end
 			break
@@ -64,7 +68,7 @@ function M.get_list_block_around_cursor()
 		li, li_bounds, li_read_time_lines = M.scan_text_around_line(li_block_bounds.lower + 1)
 
 		if li == nil then
-			if string.len(li_read_time_lines[1]) > 0 then
+			if li_read_time_lines[1] ~= "" then
 				to_put_separator_at_end = true
 			end
 			break
@@ -115,7 +119,7 @@ function M.scan_text_around_line(line_num)
 
 	local bounds = { upper = line_num, lower = line_num }
 
-	if li_shell == nil and cursor_line_preamble_len == 0 then
+	if li_shell == nil and M.line_confirmed_not_in_li(content_line, cursor_line_preamble_len) then
 		return nil, bounds, { raw_line }, cursor_line_preamble_len
 	end
 
@@ -129,7 +133,7 @@ function M.scan_text_around_line(line_num)
 			raw_line = vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1]
 			li_shell, content_line, current_line_preamble_len = M.pattern_match_line(raw_line)
 
-			if current_line_preamble_len == 0 then
+			if M.line_confirmed_not_in_li(content_line, current_line_preamble_len) then
 				bounds.upper = current_lnum + 1
 				break
 			end
@@ -149,7 +153,7 @@ function M.scan_text_around_line(line_num)
 		raw_line = vim.api.nvim_buf_get_lines(0, current_lnum - 1, current_lnum, true)[1]
 		li_shell, content_line, current_line_preamble_len = M.pattern_match_line(raw_line)
 
-		if current_line_preamble_len == 0 or li_shell ~= nil then
+		if M.line_confirmed_not_in_li(content_line, current_line_preamble_len) or li_shell ~= nil then
 			bounds.lower = current_lnum - 1
 			break
 		end
@@ -233,6 +237,20 @@ function M.pattern_match_task_root(text)
 	local is_completed = completion == "x" or completion == "X"
 
 	return true, is_completed, content_line, string.len(preamble)
+end
+
+---Note that the behaviour of this function depends on the module setting
+---multiline_requires_whitespace.
+---
+---@param content_line string
+---@param preamble_len integer
+---@return boolean in_li True if line is definitely not part of list item.
+function M.line_confirmed_not_in_li(content_line, preamble_len)
+	if M.multiline_requires_whitespace then
+		return preamble_len == 0
+	end
+
+	return content_line == ""
 end
 
 ---Draw out string representations of list items in li_array between the lines
