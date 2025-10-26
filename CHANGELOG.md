@@ -5,6 +5,9 @@
 - [x] Prose text directly below a list item should only be considered part of
       the list item contents if the prose text is indented at least with one
       space
+- [ ] Fix behaviour of \<CR\> on an empty list item in list blocks that have the
+      root item high up (it should return out of the list block, instead of
+      demoting the whole list block which is what happens currently)
 
 ## Version 0.2
 
